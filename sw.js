@@ -1,4 +1,4 @@
-const CACHE = "nios-access-shell-v2.2";
+const CACHE = "nios-access-shell-v2.4";
 const SHELL_FILES = [
   "./",
   "./index.html",

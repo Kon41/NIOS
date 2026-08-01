@@ -494,40 +494,37 @@
 
   </div><!-- /#mainWrap -->
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 (function () {
   "use strict";
 
   /* =========================================================================
-     EMAIL OTP LOGIN — free forever, no monthly cap, no credit card
+     EMAIL OTP LOGIN — 100% free forever (no server, no billing plan needed)
      =========================================================================
-     Sends email via a free Google Apps Script "Web App" acting as your
-     backend, using MailApp.sendEmail() under your own Gmail account.
-     Google's free daily quota is your only limit:
-       - Plain Gmail account:        ~100 emails / day
-       - Google Workspace account:   ~1,500 emails / day
-     The quota resets every 24 hours forever — no monthly cap, no billing
-     account ever required. (No provider offers truly infinite sending —
-     this is the highest genuinely-free ceiling available.)
-
-     The 6-digit code is generated and verified in the browser; the Apps
-     Script endpoint only relays the email.
+     Uses EmailJS (https://www.emailjs.com) free tier: 200 emails/month,
+     no credit card ever required. The 6-digit code is generated in the
+     browser and verified in the browser — EmailJS only delivers the email.
 
      SETUP (one-time, ~5 minutes):
-     1. Go to https://script.google.com → New project.
-     2. Delete the placeholder code and paste in the Apps Script shown
-        in the chat response (Code.gs). Save.
-     3. Deploy → New deployment → gear icon → Web app.
-          - Execute as: Me
-          - Who has access: Anyone
-        Click Deploy, authorize with your Google account, then copy the
-        Web app URL (ends in /exec).
-     4. Paste that URL into CONFIG.APPS_SCRIPT_URL below.
-     5. (Optional) To restrict login to specific people, list their
-        emails in ALLOWED_EMAILS. Leave empty to allow any email address.
+     1. Go to https://www.emailjs.com → Sign Up (free).
+     2. Email Services → Add New Service → connect Gmail/Outlook/etc.
+        Copy the "Service ID".
+     3. Email Templates → Create New Template. Use a subject like
+        "Your NIOS Portal login code" and body containing:
+            Your one-time code is: {{otp_code}}
+            It expires in 10 minutes.
+        Set the "To email" field of the template to {{to_email}}.
+        Copy the "Template ID".
+     4. Account → General → copy your "Public Key".
+     5. Paste all three values into CONFIG below.
+     6. (Optional) To restrict login to specific people, list their emails
+        in ALLOWED_EMAILS. Leave the array empty to allow any email address.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz6Ng1MxoknLDq-Pa82CzP7VtJKuj0fwth9GmIVVCrhFCFxzah1txoNZ_EkDnwyQH71aA/exec",
+    EMAILJS_PUBLIC_KEY: "YOUR_PUBLIC_KEY",
+    EMAILJS_SERVICE_ID: "YOUR_SERVICE_ID",
+    EMAILJS_TEMPLATE_ID: "YOUR_TEMPLATE_ID",
     ALLOWED_EMAILS: [], // e.g. ["you@example.com", "family@example.com"]
     CODE_TTL_MS: 10 * 60 * 1000,      // code valid for 10 minutes
     SESSION_TTL_MS: 30 * 24 * 60 * 60 * 1000, // stay logged in 30 days
@@ -537,6 +534,10 @@
 
   const SESSION_KEY = "nios_portal_session";
   const OTP_KEY = "nios_portal_otp";
+
+  if (window.emailjs && CONFIG.EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+    emailjs.init({ publicKey: CONFIG.EMAILJS_PUBLIC_KEY });
+  }
 
   const loginGate = document.getElementById("loginGate");
   const mainWrap = document.getElementById("mainWrap");
@@ -623,7 +624,7 @@
       emailErr.textContent = "This email isn't authorized for this portal.";
       return;
     }
-    if (CONFIG.APPS_SCRIPT_URL === "YOUR_APPS_SCRIPT_WEB_APP_URL") {
+    if (!window.emailjs || CONFIG.EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
       emailErr.textContent = "Email sending isn't configured yet — see CONFIG in the source.";
       return;
     }
@@ -636,13 +637,9 @@
     sendCodeBtn.disabled = true;
     sendCodeBtn.textContent = "Sending…";
 
-    // text/plain avoids a CORS preflight, which Apps Script Web Apps don't handle.
-    fetch(CONFIG.APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ to_email: email, otp_code: code })
-    }).then((res) => res.json()).then((data) => {
-      if (!data || data.ok !== true) throw new Error((data && data.error) || "Send failed");
+    emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      otp_code: code
     }).then(() => {
       sendCodeBtn.disabled = false;
       sendCodeBtn.textContent = "Send code";

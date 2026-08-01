@@ -1,4 +1,4 @@
-const CACHE = "nios-access-shell-v3.1";
+const CACHE = "nios-access-shell-v3.4";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

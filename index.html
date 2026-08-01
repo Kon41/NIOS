@@ -270,6 +270,89 @@
     padding:0 20px;
     line-height:1.6;
   }
+
+  /* ---- iOS install sheet ---- */
+  .ios-sheet{
+    display:none;
+    margin:14px 20px 0;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(217,142,59,0.5);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--parchment);
+  }
+  .ios-sheet b{color:var(--marigold);}
+
+  /* ---- in-app browser overlay ---- */
+  .viewer{
+    position:fixed; inset:0;
+    background:var(--parchment);
+    z-index:50;
+    display:flex; flex-direction:column;
+    transform:translateY(100%);
+    transition:transform 0.25s ease;
+  }
+  .viewer.open{ transform:translateY(0); }
+  .viewer-bar{
+    flex:none;
+    background:var(--indigo);
+    color:var(--parchment);
+    padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .viewer-bar button{
+    background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.2);
+    color:var(--parchment);
+    width:34px; height:34px; border-radius:50%;
+    font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+    flex:none;
+    cursor:pointer;
+  }
+  .viewer-info{min-width:0; flex:1;}
+  .viewer-info .name{font-weight:600; font-size:13.5px; margin:0;}
+  .viewer-info .domain{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:10.5px; color:#C9D3EA;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;
+  }
+  .viewer-open-ext{
+    flex:none; font-size:11px; font-weight:600;
+    background:var(--marigold); color:var(--indigo);
+    border:none; border-radius:7px; padding:8px 10px;
+  }
+  .viewer-body{ flex:1; position:relative; }
+  .viewer-body iframe{ width:100%; height:100%; border:0; display:block; }
+  .viewer-loading{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px;
+    color:var(--muted); font-size:13px;
+    background:var(--parchment);
+  }
+  .spinner{
+    width:26px; height:26px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--marigold);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .viewer-blocked{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; padding:30px; text-align:center;
+    background:var(--parchment);
+  }
+  .viewer-blocked.show{ display:flex; }
+  .viewer-blocked p{ font-size:13.5px; color:var(--muted); max-width:32ch; line-height:1.5; margin:0; }
+  .viewer-blocked .go-ext{
+    background:var(--indigo); color:var(--parchment);
+    border:none; border-radius:9px; padding:11px 18px;
+    font-size:13.5px; font-weight:600; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -288,13 +371,17 @@
       <span>Add this to your home screen for one-tap access.</span>
       <button id="installBtn" type="button">Install</button>
     </div>
+
+    <div class="ios-sheet" id="iosSheet">
+      Install on iPhone/iPad: tap the <b>Share</b> button in Safari's toolbar, then choose <b>Add to Home Screen</b>. Safari doesn't allow apps to trigger this automatically — it has to be done from the Share menu.
+    </div>
   </header>
 
   <main>
 
     <p class="section-title"><span>Dashboard &amp; Login</span><span class="ref">REF · SDMIS</span></p>
 
-    <a class="stub primary" href="https://sdmis.nios.ac.in/auth" target="_blank" rel="noopener">
+    <a class="stub primary js-stub" href="https://sdmis.nios.ac.in/auth" data-url="https://sdmis.nios.ac.in/auth">
       <div class="tear"><span>LOGIN</span></div>
       <div class="content">
         <div class="text">
@@ -309,7 +396,7 @@
       </div>
     </a>
 
-    <a class="stub" href="https://sdmis.nios.ac.in/" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://sdmis.nios.ac.in/" data-url="https://sdmis.nios.ac.in/">
       <div class="tear"><span>HOME</span></div>
       <div class="content">
         <div class="text">
@@ -322,7 +409,7 @@
 
     <p class="section-title"><span>Examinations</span><span class="ref">REF · EXAM CELL</span></p>
 
-    <a class="stub" href="https://results.nios.ac.in/" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://results.nios.ac.in/" data-url="https://results.nios.ac.in/">
       <div class="tear"><span>RESULT</span></div>
       <div class="content">
         <div class="text">
@@ -333,7 +420,7 @@
       </div>
     </a>
 
-    <a class="stub" href="https://sdmis.nios.ac.in/search/hall-ticket" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://sdmis.nios.ac.in/search/hall-ticket" data-url="https://sdmis.nios.ac.in/search/hall-ticket">
       <div class="tear"><span>ADMIT</span></div>
       <div class="content">
         <div class="text">
@@ -344,7 +431,7 @@
       </div>
     </a>
 
-    <a class="stub" href="https://sdmis.nios.ac.in/search/fa-hall-ticket" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://sdmis.nios.ac.in/search/fa-hall-ticket" data-url="https://sdmis.nios.ac.in/search/fa-hall-ticket">
       <div class="tear"><span>ADMIT</span></div>
       <div class="content">
         <div class="text">
@@ -357,7 +444,7 @@
 
     <p class="section-title"><span>Resources &amp; Support</span><span class="ref">REF · GENERAL</span></p>
 
-    <a class="stub" href="https://nios.ac.in/online-course-material.aspx" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://nios.ac.in/online-course-material.aspx" data-url="https://nios.ac.in/online-course-material.aspx">
       <div class="tear"><span>STUDY</span></div>
       <div class="content">
         <div class="text">
@@ -368,7 +455,7 @@
       </div>
     </a>
 
-    <a class="stub" href="https://sdmis.nios.ac.in/registration/home-notifications" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://sdmis.nios.ac.in/registration/home-notifications" data-url="https://sdmis.nios.ac.in/registration/home-notifications">
       <div class="tear"><span>NOTICE</span></div>
       <div class="content">
         <div class="text">
@@ -379,7 +466,7 @@
       </div>
     </a>
 
-    <a class="stub" href="https://sdmis.nios.ac.in/home/regional-center" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://sdmis.nios.ac.in/home/regional-center" data-url="https://sdmis.nios.ac.in/home/regional-center">
       <div class="tear"><span>CENTRE</span></div>
       <div class="content">
         <div class="text">
@@ -390,7 +477,7 @@
       </div>
     </a>
 
-    <a class="stub" href="https://www.nios.ac.in" target="_blank" rel="noopener">
+    <a class="stub js-stub" href="https://www.nios.ac.in" data-url="https://www.nios.ac.in">
       <div class="tear"><span>MAIN</span></div>
       <div class="content">
         <div class="text">
@@ -402,7 +489,7 @@
     </a>
 
     <div class="notice">
-      <strong>About this card.</strong> This app is an unofficial launcher built for quick, one-tap access — it is not produced by or affiliated with NIOS. It stores no login details and does not display NIOS pages inside itself; every card hands you off to the genuine <strong>nios.ac.in</strong> / <strong>sdmis.nios.ac.in</strong> domain in your browser, where you sign in directly with NIOS. Always check that the address bar shows one of those two domains before entering your enrollment number or password.
+      <strong>About this card.</strong> This app is an unofficial launcher built for quick, one-tap access — it is not produced by or affiliated with NIOS. Cards open the genuine <strong>nios.ac.in</strong> / <strong>sdmis.nios.ac.in</strong> pages inside this app, loaded directly from NIOS's own servers with nothing copied or intercepted. Login-sensitive pages may still refuse to display inside any outside app (their own anti-clickjacking protection) — if that happens you'll see a one-tap button to continue in your browser instead. Always check the domain shown at the top of the screen before entering your enrollment number or password.
     </div>
 
     <footer>
@@ -411,6 +498,28 @@
 
   </main>
 
+  <div class="viewer" id="viewer" aria-hidden="true">
+    <div class="viewer-bar">
+      <button type="button" id="viewerClose" aria-label="Close">←</button>
+      <div class="viewer-info">
+        <p class="name" id="viewerName">NIOS</p>
+        <span class="domain" id="viewerDomain">nios.ac.in</span>
+      </div>
+      <button type="button" class="viewer-open-ext" id="viewerOpenExt">Chrome ↗</button>
+    </div>
+    <div class="viewer-body">
+      <iframe id="viewerFrame" title="NIOS official site" referrerpolicy="no-referrer"></iframe>
+      <div class="viewer-loading" id="viewerLoading">
+        <div class="spinner"></div>
+        <span>Loading from NIOS…</span>
+      </div>
+      <div class="viewer-blocked" id="viewerBlocked">
+        <p><strong>NIOS blocks this page from opening inside another app</strong> — that's their own anti-phishing protection on the login/portal pages, not a limit of this launcher. Open it in your browser instead.</p>
+        <button type="button" class="go-ext" id="viewerBlockedOpen">Open in Chrome</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
@@ -418,15 +527,30 @@
     });
   }
 
+  // ---- Install handling (Android/desktop Chrome vs iOS Safari) ----
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
   let deferredPrompt;
   const bar = document.getElementById("installBar");
   const btn = document.getElementById("installBtn");
+  const iosSheet = document.getElementById("iosSheet");
 
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    bar.style.display = "flex";
-  });
+  if (!isStandalone) {
+    if (isIOS) {
+      iosSheet.style.display = "block";
+    } else {
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        bar.style.display = "flex";
+      });
+    }
+  }
 
   btn?.addEventListener("click", async () => {
     if (!deferredPrompt) return;
@@ -438,6 +562,74 @@
 
   window.addEventListener("appinstalled", () => {
     bar.style.display = "none";
+  });
+
+  // ---- In-app viewer (opens NIOS pages inside this app instead of the external browser) ----
+  const viewer = document.getElementById("viewer");
+  const viewerFrame = document.getElementById("viewerFrame");
+  const viewerName = document.getElementById("viewerName");
+  const viewerDomain = document.getElementById("viewerDomain");
+  const viewerLoading = document.getElementById("viewerLoading");
+  const viewerBlocked = document.getElementById("viewerBlocked");
+  const viewerClose = document.getElementById("viewerClose");
+  const viewerOpenExt = document.getElementById("viewerOpenExt");
+  const viewerBlockedOpen = document.getElementById("viewerBlockedOpen");
+
+  let currentUrl = "";
+  let blockTimer = null;
+
+  function openViewer(url, name) {
+    currentUrl = url;
+    viewerName.textContent = name;
+    try { viewerDomain.textContent = new URL(url).host + new URL(url).pathname.replace(/\/$/, ""); }
+    catch { viewerDomain.textContent = url; }
+
+    viewerBlocked.classList.remove("show");
+    viewerLoading.style.display = "flex";
+    viewerFrame.src = url;
+    viewer.classList.add("open");
+    viewer.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+
+    // Cross-origin iframes never tell us *why* they didn't load (X-Frame-Options
+    // failures don't fire a JS error event), so a load-timeout is the only signal
+    // available: if nothing has rendered after a few seconds, offer the fallback.
+    clearTimeout(blockTimer);
+    blockTimer = setTimeout(() => {
+      viewerLoading.style.display = "none";
+      viewerBlocked.classList.add("show");
+    }, 4000);
+  }
+
+  function closeViewer() {
+    viewer.classList.remove("open");
+    viewer.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    clearTimeout(blockTimer);
+    setTimeout(() => { viewerFrame.src = "about:blank"; }, 250);
+  }
+
+  viewerFrame.addEventListener("load", () => {
+    if (viewerFrame.src === "about:blank") return;
+    clearTimeout(blockTimer);
+    viewerLoading.style.display = "none";
+  });
+
+  viewerClose.addEventListener("click", closeViewer);
+  viewerOpenExt.addEventListener("click", () => window.open(currentUrl, "_blank", "noopener"));
+  viewerBlockedOpen.addEventListener("click", () => window.open(currentUrl, "_blank", "noopener"));
+
+  document.querySelectorAll(".js-stub").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const url = link.getAttribute("data-url");
+      const name = link.querySelector(".name")?.textContent?.trim() || "NIOS";
+      openViewer(url, name);
+    });
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && viewer.classList.contains("open")) closeViewer();
   });
 </script>
 

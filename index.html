@@ -710,7 +710,28 @@
     }
 
     rows.push(isStandalone ? ok("Already running as installed app") : "— Not yet installed —");
-    rows.push(isIOS ? "iOS: use Share → Add to Home Screen (no auto-prompt exists)" : (deferredPrompt ? ok("Install prompt is available now") : "Install prompt not fired yet — needs all checks above to pass, plus a moment of browsing"));
+
+    const ua = navigator.userAgent;
+    const isFirefox = /firefox/i.test(ua);
+    const isSamsung = /samsungbrowser/i.test(ua);
+    const isEdge = /edg\//i.test(ua);
+    const isChrome = /chrome\/|crios\//i.test(ua) && !isEdge && !isSamsung;
+    const isInAppBrowser = /fban|fbav|instagram|line\/|micromessenger|twitter/i.test(ua);
+    const isChromeIOS = /crios/i.test(ua);
+
+    if (isIOS && isChromeIOS) {
+      rows.push(bad("Chrome on iOS uses Apple's engine — no install prompt exists here either; use Safari's Share menu instead"));
+    } else if (isIOS) {
+      rows.push("iOS: use Share → Add to Home Screen (no auto-prompt exists on any iOS browser)");
+    } else if (isInAppBrowser) {
+      rows.push(bad("Opened inside another app's built-in browser (e.g. Instagram/WhatsApp/Messenger) — these block installing. Open this link in Chrome/Edge/Samsung Internet directly instead"));
+    } else if (isFirefox) {
+      rows.push(bad("Firefox doesn't support automatic install prompts — use the browser menu → \"Install\" if offered, or Chrome/Edge for one-tap install"));
+    } else if (isChrome || isEdge || isSamsung) {
+      rows.push(deferredPrompt ? ok("Install prompt is available now") : "Prompt hasn't fired yet — reload the page once via its https:// URL (not from a share/preview link), and make sure all checks above are ✔");
+    } else {
+      rows.push("Unrecognized browser — automatic install prompts are Chrome/Edge/Samsung Internet only");
+    }
 
     diagList.innerHTML = rows.map((r) => `<li>${r}</li>`).join("");
   }

@@ -494,6 +494,8 @@
 
     <footer>
       Not an official NIOS product · Links only to nios.ac.in and sdmis.nios.ac.in
+      <br /><button type="button" id="diagToggle" style="background:none;border:none;text-decoration:underline;color:inherit;font-size:11px;cursor:pointer;padding:6px 0;">Install diagnostics</button>
+      <ul id="diagList" style="display:none;text-align:left;list-style:none;padding:10px 14px;margin:6px auto 0;max-width:340px;background:var(--parchment-2);border:1px solid var(--line);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1.9;color:var(--muted);"></ul>
     </footer>
 
   </main>
@@ -612,7 +614,34 @@
   viewerFrame.addEventListener("load", () => {
     if (viewerFrame.src === "about:blank") return;
     clearTimeout(blockTimer);
+
+    // When NIOS refuses to be framed, Chrome/Safari load their own internal
+    // "refused to connect" document *inside* the iframe instead of the real
+    // page — and that internal document is same-origin with us, unlike a real
+    // NIOS page load which is cross-origin. So: if reading contentWindow's
+    // location does NOT throw, what loaded is our own browser's error page,
+    // not NIOS — meaning it was blocked.
+    let blocked = false;
+    try {
+      void viewerFrame.contentWindow.location.href;
+      blocked = true;
+    } catch (err) {
+      blocked = false; // threw = genuinely cross-origin = NIOS's real page loaded
+    }
+
     viewerLoading.style.display = "none";
+    if (blocked) viewerBlocked.classList.add("show");
+  });
+
+  // A Content-Security-Policy frame-ancestors rule (stricter than X-Frame-Options)
+  // makes Chrome fire a network-level "error" event on the iframe itself
+  // (net::ERR_BLOCKED_BY_CSP) instead of loading any document — the load-event
+  // check above never even runs in that case, so this is the reliable catch for it.
+  viewerFrame.addEventListener("error", () => {
+    if (viewerFrame.src === "about:blank") return;
+    clearTimeout(blockTimer);
+    viewerLoading.style.display = "none";
+    viewerBlocked.classList.add("show");
   });
 
   viewerClose.addEventListener("click", closeViewer);
@@ -630,6 +659,66 @@
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && viewer.classList.contains("open")) closeViewer();
+  });
+
+  // ---- Install diagnostics (so install issues can be seen without dev tools) ----
+  const diagToggle = document.getElementById("diagToggle");
+  const diagList = document.getElementById("diagList");
+
+  async function runDiagnostics() {
+    const rows = [];
+    const ok = (label) => `✔ ${label}`;
+    const bad = (label) => `✘ ${label}`;
+
+    rows.push(
+      location.protocol === "https:" || location.hostname === "localhost"
+        ? ok("Served over HTTPS")
+        : bad("Not HTTPS — install requires it")
+    );
+
+    try {
+      const res = await fetch("manifest.json", { cache: "no-store" });
+      if (!res.ok) throw new Error(res.status);
+      const ct = res.headers.get("content-type") || "";
+      await res.clone().json();
+      rows.push(ok("manifest.json loads and parses"));
+      if (!/json/.test(ct)) rows.push(bad(`manifest served as "${ct || "unknown type"}", expected JSON`));
+    } catch (err) {
+      rows.push(bad("manifest.json failed: " + err.message));
+    }
+
+    for (const icon of ["icons/icon-192.png", "icons/icon-512.png"]) {
+      try {
+        const r = await fetch(icon, { cache: "no-store" });
+        rows.push(r.ok ? ok(icon + " reachable") : bad(icon + " → HTTP " + r.status));
+      } catch {
+        rows.push(bad(icon + " unreachable"));
+      }
+    }
+
+    if ("serviceWorker" in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg && reg.active) rows.push(ok("Service worker active"));
+        else if (reg) rows.push(bad("Service worker registered but not active yet — reload once more"));
+        else rows.push(bad("No service worker registered"));
+      } catch (err) {
+        rows.push(bad("Service worker error: " + err.message));
+      }
+    } else {
+      rows.push(bad("Browser has no service worker support"));
+    }
+
+    rows.push(isStandalone ? ok("Already running as installed app") : "— Not yet installed —");
+    rows.push(isIOS ? "iOS: use Share → Add to Home Screen (no auto-prompt exists)" : (deferredPrompt ? ok("Install prompt is available now") : "Install prompt not fired yet — needs all checks above to pass, plus a moment of browsing"));
+
+    diagList.innerHTML = rows.map((r) => `<li>${r}</li>`).join("");
+  }
+
+  diagToggle?.addEventListener("click", () => {
+    const showing = diagList.style.display !== "none";
+    diagList.style.display = showing ? "none" : "block";
+    if (!showing) runDiagnostics();
   });
 </script>
 

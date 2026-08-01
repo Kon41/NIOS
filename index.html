@@ -240,9 +240,91 @@
     background:var(--indigo); color:var(--parchment); border:none; border-radius:9px;
     padding:11px 18px; font-size:13.5px; font-weight:600; cursor:pointer;
   }
+
+  /* ---- login gate (email OTP) ---- */
+  #loginGate{
+    position:fixed; inset:0; z-index:100; background:var(--parchment);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    overflow-y:auto;
+  }
+  .login-card{
+    width:100%; max-width:380px; background:#fff; border:1px solid var(--line);
+    border-radius:16px; padding:26px 22px 22px; box-shadow:0 10px 30px rgba(28,35,51,0.08);
+  }
+  .login-card .badge{
+    width:42px; height:42px; border-radius:50%; border:2px solid var(--marigold);
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Fraunces", serif; font-weight:700; font-size:16px; color:var(--indigo);
+    margin-bottom:12px;
+  }
+  .login-card h2{
+    font-family:"Fraunces", serif; font-weight:600; font-size:19px; margin:0 0 6px; color:var(--indigo);
+  }
+  .login-card p.hint{ font-size:12.5px; color:var(--muted); line-height:1.5; margin:0 0 18px; }
+  .login-card label{
+    display:block; font-size:11.5px; font-weight:600; color:var(--indigo-2);
+    text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;
+  }
+  .login-card input{
+    width:100%; padding:11px 12px; font-size:15px; border:1.5px solid var(--line);
+    border-radius:9px; background:var(--parchment); color:var(--ink); font-family:inherit;
+    margin-bottom:6px;
+  }
+  .login-card input:focus{ outline:none; border-color:var(--marigold); }
+  .login-card input.otp-input{
+    letter-spacing:0.5em; font-family:"IBM Plex Mono", monospace; font-size:20px; text-align:center;
+  }
+  .login-card .err{ color:var(--red); font-size:12px; min-height:16px; margin:2px 0 10px; }
+  .login-card .ok-msg{ color:var(--green); font-size:12px; min-height:16px; margin:2px 0 10px; }
+  .login-card button{
+    width:100%; background:var(--indigo); color:var(--parchment); border:none;
+    border-radius:9px; padding:12px 14px; font-size:14.5px; font-weight:600;
+    cursor:pointer; margin-top:6px;
+  }
+  .login-card button:disabled{ opacity:0.55; cursor:not-allowed; }
+  .login-card button.secondary{
+    background:none; color:var(--indigo-2); text-decoration:underline; font-weight:500;
+    padding:8px; margin-top:2px;
+  }
+  .login-card .switch-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .login-card .switch-row button{
+    flex:1; margin:0; background:var(--parchment-2); color:var(--indigo-2);
+    border:1px solid var(--line); font-size:12.5px; padding:9px 8px;
+  }
+  .login-card .switch-row button.active{ background:var(--indigo); color:var(--parchment); border-color:var(--indigo); }
+  #mainWrap{ display:none; }
 </style>
 </head>
 <body>
+
+  <div id="loginGate">
+    <div class="login-card">
+      <div class="badge">N</div>
+
+      <div id="stepEmail">
+        <h2>Sign in to continue</h2>
+        <p class="hint">Enter your email and we'll send you a 6-digit one-time code. No password needed.</p>
+        <label for="otpEmail">Email address</label>
+        <input type="email" id="otpEmail" autocomplete="email" placeholder="you@example.com" />
+        <div class="err" id="emailErr"></div>
+        <button type="button" id="sendCodeBtn">Send code</button>
+      </div>
+
+      <div id="stepCode" style="display:none;">
+        <h2>Enter your code</h2>
+        <p class="hint">We sent a 6-digit code to <strong id="sentToEmail"></strong>. It expires in 10 minutes.</p>
+        <label for="otpCode">6-digit code</label>
+        <input type="text" id="otpCode" class="otp-input" inputmode="numeric" maxlength="6" placeholder="000000" />
+        <div class="err" id="codeErr"></div>
+        <div class="ok-msg" id="codeOk"></div>
+        <button type="button" id="verifyBtn">Verify &amp; continue</button>
+        <button type="button" class="secondary" id="resendBtn">Resend code</button>
+        <button type="button" class="secondary" id="changeEmailBtn">Use a different email</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainWrap">
 
   <header class="letterhead">
     <div class="badge-row">
@@ -382,7 +464,8 @@
     </div>
 
     <footer>
-      Not an official NIOS product · Links only to nios.ac.in and sdmis.nios.ac.in
+      Not an official NIOS product · Links only to nios.ac.in and sdmis.nios.ac.in<br/>
+      <a href="#" onclick="niosLogout(); return false;" style="text-decoration:underline;">Sign out</a>
     </footer>
 
   </main>
@@ -409,6 +492,229 @@
     </div>
   </div>
 
+  </div><!-- /#mainWrap -->
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* =========================================================================
+     EMAIL OTP LOGIN — 100% free forever (no server, no billing plan needed)
+     =========================================================================
+     Uses EmailJS (https://www.emailjs.com) free tier: 200 emails/month,
+     no credit card ever required. The 6-digit code is generated in the
+     browser and verified in the browser — EmailJS only delivers the email.
+
+     SETUP (one-time, ~5 minutes):
+     1. Go to https://www.emailjs.com → Sign Up (free).
+     2. Email Services → Add New Service → connect Gmail/Outlook/etc.
+        Copy the "Service ID".
+     3. Email Templates → Create New Template. Use a subject like
+        "Your NIOS Portal login code" and body containing:
+            Your one-time code is: {{otp_code}}
+            It expires in 10 minutes.
+        Set the "To email" field of the template to {{to_email}}.
+        Copy the "Template ID".
+     4. Account → General → copy your "Public Key".
+     5. Paste all three values into CONFIG below.
+     6. (Optional) To restrict login to specific people, list their emails
+        in ALLOWED_EMAILS. Leave the array empty to allow any email address.
+     ========================================================================= */
+  const CONFIG = {
+    EMAILJS_PUBLIC_KEY: "YOUR_PUBLIC_KEY",
+    EMAILJS_SERVICE_ID: "YOUR_SERVICE_ID",
+    EMAILJS_TEMPLATE_ID: "YOUR_TEMPLATE_ID",
+    ALLOWED_EMAILS: [], // e.g. ["you@example.com", "family@example.com"]
+    CODE_TTL_MS: 10 * 60 * 1000,      // code valid for 10 minutes
+    SESSION_TTL_MS: 30 * 24 * 60 * 60 * 1000, // stay logged in 30 days
+    RESEND_COOLDOWN_MS: 30 * 1000,    // 30s between resends
+    MAX_ATTEMPTS: 5
+  };
+
+  const SESSION_KEY = "nios_portal_session";
+  const OTP_KEY = "nios_portal_otp";
+
+  if (window.emailjs && CONFIG.EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+    emailjs.init({ publicKey: CONFIG.EMAILJS_PUBLIC_KEY });
+  }
+
+  const loginGate = document.getElementById("loginGate");
+  const mainWrap = document.getElementById("mainWrap");
+  const stepEmail = document.getElementById("stepEmail");
+  const stepCode = document.getElementById("stepCode");
+  const otpEmailInput = document.getElementById("otpEmail");
+  const otpCodeInput = document.getElementById("otpCode");
+  const sentToEmail = document.getElementById("sentToEmail");
+  const emailErr = document.getElementById("emailErr");
+  const codeErr = document.getElementById("codeErr");
+  const codeOk = document.getElementById("codeOk");
+  const sendCodeBtn = document.getElementById("sendCodeBtn");
+  const verifyBtn = document.getElementById("verifyBtn");
+  const resendBtn = document.getElementById("resendBtn");
+  const changeEmailBtn = document.getElementById("changeEmailBtn");
+
+  function showPortal() {
+    loginGate.style.display = "none";
+    mainWrap.style.display = "block";
+  }
+  function showGate() {
+    loginGate.style.display = "flex";
+    mainWrap.style.display = "none";
+  }
+
+  function getSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (!s.expiresAt || Date.now() > s.expiresAt) {
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+      return s;
+    } catch { return null; }
+  }
+
+  function setSession(email) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      email, expiresAt: Date.now() + CONFIG.SESSION_TTL_MS
+    }));
+  }
+
+  window.niosLogout = function () {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(OTP_KEY);
+    location.reload();
+  };
+
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  function genCode() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  let resendTimer = null;
+  function startResendCooldown() {
+    let remaining = Math.ceil(CONFIG.RESEND_COOLDOWN_MS / 1000);
+    resendBtn.disabled = true;
+    resendBtn.textContent = `Resend code (${remaining}s)`;
+    clearInterval(resendTimer);
+    resendTimer = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(resendTimer);
+        resendBtn.disabled = false;
+        resendBtn.textContent = "Resend code";
+      } else {
+        resendBtn.textContent = `Resend code (${remaining}s)`;
+      }
+    }, 1000);
+  }
+
+  function sendOtp(email) {
+    emailErr.textContent = "";
+    if (!isValidEmail(email)) {
+      emailErr.textContent = "Enter a valid email address.";
+      return;
+    }
+    if (CONFIG.ALLOWED_EMAILS.length && !CONFIG.ALLOWED_EMAILS.includes(email.toLowerCase())) {
+      emailErr.textContent = "This email isn't authorized for this portal.";
+      return;
+    }
+    if (!window.emailjs || CONFIG.EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
+      emailErr.textContent = "Email sending isn't configured yet — see CONFIG in the source.";
+      return;
+    }
+
+    const code = genCode();
+    sessionStorage.setItem(OTP_KEY, JSON.stringify({
+      email, code, expiresAt: Date.now() + CONFIG.CODE_TTL_MS, attempts: 0
+    }));
+
+    sendCodeBtn.disabled = true;
+    sendCodeBtn.textContent = "Sending…";
+
+    emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      otp_code: code
+    }).then(() => {
+      sendCodeBtn.disabled = false;
+      sendCodeBtn.textContent = "Send code";
+      sentToEmail.textContent = email;
+      stepEmail.style.display = "none";
+      stepCode.style.display = "block";
+      otpCodeInput.value = "";
+      codeErr.textContent = "";
+      codeOk.textContent = "";
+      otpCodeInput.focus();
+      startResendCooldown();
+    }).catch((err) => {
+      sendCodeBtn.disabled = false;
+      sendCodeBtn.textContent = "Send code";
+      emailErr.textContent = "Couldn't send the email. Check your EmailJS setup and try again.";
+      console.error("EmailJS error:", err);
+    });
+  }
+
+  function verifyOtp(inputCode) {
+    codeErr.textContent = "";
+    codeOk.textContent = "";
+    let stored;
+    try { stored = JSON.parse(sessionStorage.getItem(OTP_KEY) || "null"); } catch { stored = null; }
+
+    if (!stored) {
+      codeErr.textContent = "No active code — request a new one.";
+      return;
+    }
+    if (Date.now() > stored.expiresAt) {
+      codeErr.textContent = "That code expired — request a new one.";
+      sessionStorage.removeItem(OTP_KEY);
+      return;
+    }
+    if (stored.attempts >= CONFIG.MAX_ATTEMPTS) {
+      codeErr.textContent = "Too many attempts — request a new code.";
+      return;
+    }
+    if (inputCode !== stored.code) {
+      stored.attempts++;
+      sessionStorage.setItem(OTP_KEY, JSON.stringify(stored));
+      codeErr.textContent = `Incorrect code. ${CONFIG.MAX_ATTEMPTS - stored.attempts} attempt(s) left.`;
+      return;
+    }
+
+    codeOk.textContent = "Verified — welcome back.";
+    sessionStorage.removeItem(OTP_KEY);
+    setSession(stored.email);
+    setTimeout(showPortal, 400);
+  }
+
+  sendCodeBtn.addEventListener("click", () => sendOtp(otpEmailInput.value.trim()));
+  otpEmailInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendOtp(otpEmailInput.value.trim()); });
+
+  verifyBtn.addEventListener("click", () => verifyOtp(otpCodeInput.value.trim()));
+  otpCodeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") verifyOtp(otpCodeInput.value.trim()); });
+  otpCodeInput.addEventListener("input", () => {
+    otpCodeInput.value = otpCodeInput.value.replace(/\D/g, "").slice(0, 6);
+  });
+
+  resendBtn.addEventListener("click", () => sendOtp(otpEmailInput.value.trim()));
+  changeEmailBtn.addEventListener("click", () => {
+    stepCode.style.display = "none";
+    stepEmail.style.display = "block";
+    sessionStorage.removeItem(OTP_KEY);
+  });
+
+  const existingSession = getSession();
+  if (existingSession) {
+    showPortal();
+  } else {
+    showGate();
+  }
+})();
+</script>
 <script>
 (function () {
   "use strict";

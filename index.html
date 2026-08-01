@@ -24,6 +24,7 @@
     --marigold:#D98E3B;
     --marigold-2:#B9722B;
     --green:#3F6B4E;
+    --red:#A5432E;
     --line:#D8CFBE;
     --muted:#6B6455;
     --radius:14px;
@@ -41,7 +42,6 @@
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
   }
-
   a{color:inherit;}
 
   .letterhead{
@@ -60,9 +60,7 @@
     background:repeating-linear-gradient(90deg, var(--marigold) 0 10px, transparent 10px 18px);
     opacity:0.9;
   }
-  .badge-row{
-    display:flex; align-items:center; gap:14px;
-  }
+  .badge-row{ display:flex; align-items:center; gap:14px; }
   .badge{
     width:46px; height:46px; border-radius:50%;
     border:2px solid var(--marigold);
@@ -71,86 +69,64 @@
     flex:none;
   }
   .eyebrow{
-    text-transform:uppercase;
-    letter-spacing:0.14em;
-    font-size:11px;
-    color:#E7C99A;
-    font-weight:500;
-    margin:0 0 2px;
+    text-transform:uppercase; letter-spacing:0.14em; font-size:11px;
+    color:#E7C99A; font-weight:500; margin:0 0 2px;
   }
   h1{
-    font-family:"Fraunces", serif;
-    font-weight:600;
-    font-size:26px;
-    line-height:1.15;
-    margin:0;
-    letter-spacing:0.2px;
+    font-family:"Fraunces", serif; font-weight:600; font-size:26px;
+    line-height:1.15; margin:0; letter-spacing:0.2px;
   }
   .sub{
-    margin:10px 0 0;
-    font-size:13.5px;
-    color:#CBD3E4;
-    max-width:46ch;
-    line-height:1.5;
+    margin:10px 0 0; font-size:13.5px; color:#CBD3E4; max-width:46ch; line-height:1.5;
   }
 
-  .install-bar{
-    display:none;
+  /* ---- always-visible setup panel ---- */
+  .setup{
     margin:14px 20px 0;
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(217,142,59,0.5);
+    background:rgba(255,255,255,0.07);
+    border:1px solid rgba(217,142,59,0.4);
     border-radius:10px;
-    padding:10px 12px;
-    font-size:13px;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    color:var(--parchment);
+    overflow:hidden;
   }
-  .install-bar button{
-    background:var(--marigold);
-    color:var(--indigo);
-    border:none;
-    font-weight:600;
-    font-size:13px;
-    padding:7px 12px;
-    border-radius:7px;
-    cursor:pointer;
+  .setup-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px; font-size:12.5px; color:var(--parchment); font-weight:600;
+  }
+  .setup-head .status-dot{
+    width:8px; height:8px; border-radius:50%; background:#E7C99A; flex:none; margin-right:6px;
+  }
+  .setup ul{
+    list-style:none; margin:0; padding:0 12px 12px;
+    font-family:"IBM Plex Mono", monospace; font-size:11px; line-height:2;
+  }
+  .setup li.ok{ color:#8FD1A4; }
+  .setup li.bad{ color:#F0A98E; }
+  .setup li.info{ color:#CBD3E4; }
+  .install-btn-row{ padding:0 12px 12px; }
+  .install-btn-row button{
+    width:100%;
+    background:var(--marigold); color:var(--indigo);
+    border:none; font-weight:600; font-size:13.5px;
+    padding:10px 12px; border-radius:8px; cursor:pointer;
   }
 
-  main{
-    max-width:520px;
-    margin:0 auto;
-    padding:22px 18px 40px;
-  }
+  main{ max-width:520px; margin:0 auto; padding:22px 18px 40px; }
 
   .section-title{
-    font-family:"Fraunces", serif;
-    font-weight:600;
-    font-size:15px;
-    color:var(--indigo-2);
-    margin:26px 0 10px;
-    display:flex;
-    align-items:baseline;
-    gap:8px;
+    font-family:"Fraunces", serif; font-weight:600; font-size:15px;
+    color:var(--indigo-2); margin:26px 0 10px;
+    display:flex; align-items:baseline; gap:8px;
   }
   .section-title:first-child{margin-top:0;}
   .section-title .ref{
-    font-family:"IBM Plex Mono", monospace;
-    font-size:10.5px;
-    color:var(--marigold-2);
-    letter-spacing:0.06em;
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px;
+    color:var(--marigold-2); letter-spacing:0.06em;
   }
 
   .stub{
-    display:flex;
-    align-items:stretch;
-    text-decoration:none;
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    margin-bottom:10px;
-    position:relative;
+    display:flex; align-items:stretch; text-decoration:none;
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    margin-bottom:10px; position:relative;
     box-shadow:0 1px 0 rgba(28,35,51,0.02);
     transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     overflow:hidden;
@@ -158,180 +134,94 @@
   .stub:hover, .stub:focus-visible{
     transform:translateY(-1px);
     box-shadow:0 6px 16px rgba(28,35,51,0.08);
-    border-color:#C9BDA3;
-    outline:none;
+    border-color:#C9BDA3; outline:none;
   }
   .stub:active{ transform:translateY(0); }
-
   .stub .tear{
-    flex:none;
-    width:34px;
-    background:var(--parchment-2);
+    flex:none; width:34px; background:var(--parchment-2);
     border-right:1.5px dashed var(--line);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
+    display:flex; align-items:center; justify-content:center; position:relative;
   }
   .stub .tear span{
-    font-family:"IBM Plex Mono", monospace;
-    font-size:10px;
-    color:var(--muted);
-    writing-mode:vertical-rl;
-    letter-spacing:0.08em;
+    font-family:"IBM Plex Mono", monospace; font-size:10px; color:var(--muted);
+    writing-mode:vertical-rl; letter-spacing:0.08em;
   }
   .stub .tear::before, .stub .tear::after{
-    content:"";
-    position:absolute; right:-5px;
+    content:""; position:absolute; right:-5px;
     width:9px; height:9px; border-radius:50%;
-    background:var(--parchment);
-    border:1px solid var(--line);
+    background:var(--parchment); border:1px solid var(--line);
   }
   .stub .tear::before{top:-5px;}
   .stub .tear::after{bottom:-5px;}
-
   .stub .content{
-    flex:1;
-    padding:13px 14px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    min-width:0;
+    flex:1; padding:13px 14px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0;
   }
   .stub .text{min-width:0;}
-  .stub .name{
-    font-weight:600;
-    font-size:14.5px;
-    color:var(--ink);
-    margin:0 0 2px;
-  }
+  .stub .name{ font-weight:600; font-size:14.5px; color:var(--ink); margin:0 0 2px; }
   .stub .domain{
-    font-family:"IBM Plex Mono", monospace;
-    font-size:11px;
-    color:var(--muted);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    display:block;
+    font-family:"IBM Plex Mono", monospace; font-size:11px; color:var(--muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;
   }
   .stub .go{
-    flex:none;
-    width:26px; height:26px;
-    border-radius:50%;
-    border:1.5px solid var(--indigo-2);
-    color:var(--indigo-2);
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px;
+    flex:none; width:26px; height:26px; border-radius:50%;
+    border:1.5px solid var(--indigo-2); color:var(--indigo-2);
+    display:flex; align-items:center; justify-content:center; font-size:14px;
   }
-  .stub.primary{
-    background:var(--indigo);
-    border-color:var(--indigo);
-    color:var(--parchment);
-  }
-  .stub.primary .tear{
-    background:rgba(255,255,255,0.06);
-    border-right-color:rgba(255,255,255,0.25);
-  }
-  .stub.primary .tear::before, .stub.primary .tear::after{
-    background:var(--indigo); border-color:rgba(255,255,255,0.3);
-  }
+  .stub.primary{ background:var(--indigo); border-color:var(--indigo); color:var(--parchment); }
+  .stub.primary .tear{ background:rgba(255,255,255,0.06); border-right-color:rgba(255,255,255,0.25); }
+  .stub.primary .tear::before, .stub.primary .tear::after{ background:var(--indigo); border-color:rgba(255,255,255,0.3); }
   .stub.primary .name{color:var(--parchment); font-size:15.5px;}
   .stub.primary .domain{color:#C9D3EA;}
   .stub.primary .go{border-color:var(--marigold); color:var(--marigold);}
   .stub.primary .tear span{color:#C9D3EA;}
 
-  .verified{
-    display:inline-flex; align-items:center; gap:4px;
-    font-size:10.5px; font-weight:500; color:var(--green);
-    margin-top:1px;
-  }
+  .verified{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:500; color:var(--green); margin-top:1px; }
   .verified svg{width:11px; height:11px; flex:none;}
   .stub.primary .verified{color:#8FD1A4;}
 
   .notice{
-    margin-top:26px;
-    padding:14px 15px;
-    background:var(--parchment-2);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    font-size:12.5px;
-    line-height:1.55;
-    color:var(--muted);
+    margin-top:26px; padding:14px 15px; background:var(--parchment-2);
+    border:1px solid var(--line); border-radius:var(--radius);
+    font-size:12.5px; line-height:1.55; color:var(--muted);
   }
   .notice strong{color:var(--ink);}
-  .notice a{text-decoration:underline; color:var(--indigo-2);}
 
-  footer{
-    text-align:center;
-    font-size:11px;
-    color:#A99E88;
-    margin-top:22px;
-    padding:0 20px;
-    line-height:1.6;
-  }
-
-  /* ---- iOS install sheet ---- */
-  .ios-sheet{
-    display:none;
-    margin:14px 20px 0;
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(217,142,59,0.5);
-    border-radius:10px;
-    padding:10px 12px;
-    font-size:12.5px;
-    line-height:1.5;
-    color:var(--parchment);
-  }
-  .ios-sheet b{color:var(--marigold);}
+  footer{ text-align:center; font-size:11px; color:#A99E88; margin-top:22px; padding:0 20px; line-height:1.6; }
 
   /* ---- in-app browser overlay ---- */
   .viewer{
-    position:fixed; inset:0;
-    background:var(--parchment);
-    z-index:50;
+    position:fixed; inset:0; background:var(--parchment); z-index:50;
     display:flex; flex-direction:column;
-    transform:translateY(100%);
-    transition:transform 0.25s ease;
+    transform:translateY(100%); transition:transform 0.25s ease;
   }
   .viewer.open{ transform:translateY(0); }
   .viewer-bar{
-    flex:none;
-    background:var(--indigo);
-    color:var(--parchment);
+    flex:none; background:var(--indigo); color:var(--parchment);
     padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
     display:flex; align-items:center; gap:10px;
   }
   .viewer-bar button{
-    background:rgba(255,255,255,0.1);
-    border:1px solid rgba(255,255,255,0.2);
-    color:var(--parchment);
-    width:34px; height:34px; border-radius:50%;
-    font-size:16px;
-    display:flex; align-items:center; justify-content:center;
-    flex:none;
-    cursor:pointer;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+    color:var(--parchment); width:34px; height:34px; border-radius:50%;
+    font-size:16px; display:flex; align-items:center; justify-content:center;
+    flex:none; cursor:pointer;
   }
   .viewer-info{min-width:0; flex:1;}
   .viewer-info .name{font-weight:600; font-size:13.5px; margin:0;}
   .viewer-info .domain{
-    font-family:"IBM Plex Mono", monospace;
-    font-size:10.5px; color:#C9D3EA;
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px; color:#C9D3EA;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;
   }
   .viewer-open-ext{
-    flex:none; font-size:11px; font-weight:600;
-    background:var(--marigold); color:var(--indigo);
+    flex:none; font-size:11px; font-weight:600; background:var(--marigold); color:var(--indigo);
     border:none; border-radius:7px; padding:8px 10px;
   }
   .viewer-body{ flex:1; position:relative; }
   .viewer-body iframe{ width:100%; height:100%; border:0; display:block; }
   .viewer-loading{
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    flex-direction:column; gap:10px;
-    color:var(--muted); font-size:13px;
-    background:var(--parchment);
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; color:var(--muted); font-size:13px; background:var(--parchment);
   }
   .spinner{
     width:26px; height:26px; border-radius:50%;
@@ -340,18 +230,15 @@
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   .viewer-blocked{
-    position:absolute; inset:0;
-    display:none;
+    position:absolute; inset:0; display:none;
     flex-direction:column; align-items:center; justify-content:center;
-    gap:14px; padding:30px; text-align:center;
-    background:var(--parchment);
+    gap:14px; padding:30px; text-align:center; background:var(--parchment);
   }
   .viewer-blocked.show{ display:flex; }
   .viewer-blocked p{ font-size:13.5px; color:var(--muted); max-width:32ch; line-height:1.5; margin:0; }
   .viewer-blocked .go-ext{
-    background:var(--indigo); color:var(--parchment);
-    border:none; border-radius:9px; padding:11px 18px;
-    font-size:13.5px; font-weight:600; cursor:pointer;
+    background:var(--indigo); color:var(--parchment); border:none; border-radius:9px;
+    padding:11px 18px; font-size:13.5px; font-weight:600; cursor:pointer;
   }
 </style>
 </head>
@@ -367,13 +254,15 @@
     </div>
     <p class="sub">An independent shortcut card for your NIOS services. Every link below opens the real, official NIOS site directly — nothing is copied, embedded, or stored here.</p>
 
-    <div class="install-bar" id="installBar">
-      <span>Add this to your home screen for one-tap access.</span>
-      <button id="installBtn" type="button">Install</button>
-    </div>
-
-    <div class="ios-sheet" id="iosSheet">
-      Install on iPhone/iPad: tap the <b>Share</b> button in Safari's toolbar, then choose <b>Add to Home Screen</b>. Safari doesn't allow apps to trigger this automatically — it has to be done from the Share menu.
+    <div class="setup" id="setup">
+      <div class="setup-head">
+        <span><span class="status-dot" id="setupDot"></span>Setup check</span>
+        <span id="setupSummary">checking…</span>
+      </div>
+      <ul id="setupList"><li class="info">Running checks…</li></ul>
+      <div class="install-btn-row" id="installRow" style="display:none;">
+        <button id="installBtn" type="button">Install to home screen</button>
+      </div>
     </div>
   </header>
 
@@ -489,13 +378,11 @@
     </a>
 
     <div class="notice">
-      <strong>About this card.</strong> This app is an unofficial launcher built for quick, one-tap access — it is not produced by or affiliated with NIOS. Cards open the genuine <strong>nios.ac.in</strong> / <strong>sdmis.nios.ac.in</strong> pages inside this app, loaded directly from NIOS's own servers with nothing copied or intercepted. Login-sensitive pages may still refuse to display inside any outside app (their own anti-clickjacking protection) — if that happens you'll see a one-tap button to continue in your browser instead. Always check the domain shown at the top of the screen before entering your enrollment number or password.
+      <strong>About this card.</strong> This app is an unofficial launcher built for quick, one-tap access — it is not produced by or affiliated with NIOS. Cards try to open the genuine <strong>nios.ac.in</strong> / <strong>sdmis.nios.ac.in</strong> pages inside this app. NIOS's own security policy blocks some pages (especially login) from displaying inside any outside app — when that happens, you'll see a one-tap button to continue in your regular browser instead. Always check the domain shown on screen before entering your enrollment number or password.
     </div>
 
     <footer>
       Not an official NIOS product · Links only to nios.ac.in and sdmis.nios.ac.in
-      <br /><button type="button" id="diagToggle" style="background:none;border:none;text-decoration:underline;color:inherit;font-size:11px;cursor:pointer;padding:6px 0;">Install diagnostics</button>
-      <ul id="diagList" style="display:none;text-align:left;list-style:none;padding:10px 14px;margin:6px auto 0;max-width:340px;background:var(--parchment-2);border:1px solid var(--line);border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1.9;color:var(--muted);"></ul>
     </footer>
 
   </main>
@@ -516,57 +403,145 @@
         <span>Loading from NIOS…</span>
       </div>
       <div class="viewer-blocked" id="viewerBlocked">
-        <p><strong>NIOS blocks this page from opening inside another app</strong> — that's their own anti-phishing protection on the login/portal pages, not a limit of this launcher. Open it in your browser instead.</p>
+        <p><strong>NIOS blocks this page from opening inside another app</strong> — that's their own anti-phishing protection, not a limit of this launcher. Open it in your browser instead.</p>
         <button type="button" class="go-ext" id="viewerBlockedOpen">Open in Chrome</button>
       </div>
     </div>
   </div>
 
 <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(() => {});
-    });
-  }
+(function () {
+  "use strict";
 
-  // ---- Install handling (Android/desktop Chrome vs iOS Safari) ----
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     window.navigator.standalone === true;
 
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const ua = navigator.userAgent;
+  const isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isChromeIOS = /crios/i.test(ua);
+  const isFirefox = /firefox/i.test(ua);
+  const isSamsung = /samsungbrowser/i.test(ua);
+  const isEdge = /edg\//i.test(ua);
+  const isChrome = /chrome\//i.test(ua) && !isEdge && !isSamsung;
+  const isInAppBrowser = /fban|fbav|instagram|line\/|micromessenger|twitter/i.test(ua);
 
-  let deferredPrompt;
-  const bar = document.getElementById("installBar");
-  const btn = document.getElementById("installBtn");
-  const iosSheet = document.getElementById("iosSheet");
+  let deferredPrompt = null;
+  let swStatus = "checking";
+  let swError = "";
+  let manifestStatus = "checking";
+  let manifestError = "";
+  let iconsOk = null;
 
-  if (!isStandalone) {
-    if (isIOS) {
-      iosSheet.style.display = "block";
+  const setupDot = document.getElementById("setupDot");
+  const setupSummary = document.getElementById("setupSummary");
+  const setupList = document.getElementById("setupList");
+  const installRow = document.getElementById("installRow");
+  const installBtn = document.getElementById("installBtn");
+
+  function renderSetup() {
+    const rows = [];
+    const ok = (t) => `<li class="ok">✔ ${t}</li>`;
+    const bad = (t) => `<li class="bad">✘ ${t}</li>`;
+    const info = (t) => `<li class="info">${t}</li>`;
+
+    rows.push(location.protocol === "https:" ? ok("HTTPS") : bad("Not served over HTTPS — install requires it"));
+
+    if (manifestStatus === "ok") rows.push(ok("manifest.json loads"));
+    else if (manifestStatus === "checking") rows.push(info("Checking manifest.json…"));
+    else rows.push(bad("manifest.json: " + manifestError));
+
+    if (iconsOk === true) rows.push(ok("Icons reachable"));
+    else if (iconsOk === false) rows.push(bad("One or more icon files 404 — check icons/ folder was uploaded with matching filenames"));
+
+    if (swStatus === "active") rows.push(ok("Service worker active"));
+    else if (swStatus === "registered") rows.push(bad("Service worker registered but not yet active — reload once more"));
+    else if (swStatus === "checking") rows.push(info("Checking service worker…"));
+    else if (swStatus === "unsupported") rows.push(bad("Browser has no service worker support"));
+    else rows.push(bad("Service worker failed: " + swError));
+
+    if (isStandalone) {
+      rows.push(ok("Already running as an installed app"));
+    } else if (isIOS && isChromeIOS) {
+      rows.push(bad("Chrome on iOS uses Apple's engine — no install prompt here either. Use Safari's Share menu."));
+    } else if (isIOS) {
+      rows.push(info("iOS: tap Share (square with arrow) → Add to Home Screen. No auto-install button exists on iOS."));
+    } else if (isInAppBrowser) {
+      rows.push(bad("Opened inside another app's built-in browser (WhatsApp/Instagram/etc.) — these block installing. Open this link directly in Chrome, Edge, or Samsung Internet."));
+    } else if (isFirefox) {
+      rows.push(bad("Firefox doesn't support one-tap install prompts — use its menu → Install, or switch to Chrome/Edge."));
+    } else if (isChrome || isEdge || isSamsung) {
+      if (deferredPrompt) rows.push(ok("Install available — button below"));
+      else rows.push(info("Prompt hasn't fired yet — waiting on the checks above, or the browser may need a reload of the real https:// URL"));
     } else {
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        bar.style.display = "flex";
-      });
+      rows.push(info("Unrecognized browser — one-tap install is Chrome/Edge/Samsung Internet only"));
     }
+
+    setupList.innerHTML = rows.join("");
+    const anyBad = rows.some((r) => r.includes('class="bad"'));
+    setupDot.style.background = anyBad ? "var(--red)" : (deferredPrompt || isStandalone ? "var(--green)" : "#E7C99A");
+    setupSummary.textContent = isStandalone ? "installed" : (deferredPrompt ? "ready to install" : (anyBad ? "issue found" : "checking…"));
+    installRow.style.display = deferredPrompt ? "block" : "none";
   }
 
-  btn?.addEventListener("click", async () => {
+  renderSetup();
+
+  // Manifest check
+  fetch("manifest.json", { cache: "no-store" })
+    .then((res) => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(() => { manifestStatus = "ok"; renderSetup(); })
+    .catch((err) => { manifestStatus = "error"; manifestError = err.message; renderSetup(); });
+
+  // Icon reachability check
+  Promise.all(["icons/icon-192.png", "icons/icon-512.png"].map((src) =>
+    fetch(src, { cache: "no-store" }).then((r) => r.ok).catch(() => false)
+  )).then((results) => { iconsOk = results.every(Boolean); renderSetup(); });
+
+  // Service worker
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js")
+        .then((reg) => {
+          const check = () => {
+            if (reg.active) { swStatus = "active"; }
+            else { swStatus = "registered"; }
+            renderSetup();
+          };
+          check();
+          if (reg.installing) reg.installing.addEventListener("statechange", check);
+          if (reg.waiting) reg.waiting.addEventListener("statechange", check);
+          navigator.serviceWorker.addEventListener("controllerchange", check);
+        })
+        .catch((err) => { swStatus = "error"; swError = err.message; renderSetup(); });
+    });
+  } else {
+    swStatus = "unsupported";
+    renderSetup();
+  }
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    renderSetup();
+  });
+
+  installBtn?.addEventListener("click", async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
-    bar.style.display = "none";
+    renderSetup();
   });
 
   window.addEventListener("appinstalled", () => {
-    bar.style.display = "none";
+    deferredPrompt = null;
+    renderSetup();
   });
 
-  // ---- In-app viewer (opens NIOS pages inside this app instead of the external browser) ----
+  // ---- In-app viewer ----
   const viewer = document.getElementById("viewer");
   const viewerFrame = document.getElementById("viewerFrame");
   const viewerName = document.getElementById("viewerName");
@@ -583,8 +558,10 @@
   function openViewer(url, name) {
     currentUrl = url;
     viewerName.textContent = name;
-    try { viewerDomain.textContent = new URL(url).host + new URL(url).pathname.replace(/\/$/, ""); }
-    catch { viewerDomain.textContent = url; }
+    try {
+      const u = new URL(url);
+      viewerDomain.textContent = u.host + u.pathname.replace(/\/$/, "");
+    } catch { viewerDomain.textContent = url; }
 
     viewerBlocked.classList.remove("show");
     viewerLoading.style.display = "flex";
@@ -593,9 +570,6 @@
     viewer.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
 
-    // Cross-origin iframes never tell us *why* they didn't load (X-Frame-Options
-    // failures don't fire a JS error event), so a load-timeout is the only signal
-    // available: if nothing has rendered after a few seconds, offer the fallback.
     clearTimeout(blockTimer);
     blockTimer = setTimeout(() => {
       viewerLoading.style.display = "none";
@@ -614,29 +588,17 @@
   viewerFrame.addEventListener("load", () => {
     if (viewerFrame.src === "about:blank") return;
     clearTimeout(blockTimer);
-
-    // When NIOS refuses to be framed, Chrome/Safari load their own internal
-    // "refused to connect" document *inside* the iframe instead of the real
-    // page — and that internal document is same-origin with us, unlike a real
-    // NIOS page load which is cross-origin. So: if reading contentWindow's
-    // location does NOT throw, what loaded is our own browser's error page,
-    // not NIOS — meaning it was blocked.
     let blocked = false;
     try {
       void viewerFrame.contentWindow.location.href;
       blocked = true;
     } catch (err) {
-      blocked = false; // threw = genuinely cross-origin = NIOS's real page loaded
+      blocked = false;
     }
-
     viewerLoading.style.display = "none";
     if (blocked) viewerBlocked.classList.add("show");
   });
 
-  // A Content-Security-Policy frame-ancestors rule (stricter than X-Frame-Options)
-  // makes Chrome fire a network-level "error" event on the iframe itself
-  // (net::ERR_BLOCKED_BY_CSP) instead of loading any document — the load-event
-  // check above never even runs in that case, so this is the reliable catch for it.
   viewerFrame.addEventListener("error", () => {
     if (viewerFrame.src === "about:blank") return;
     clearTimeout(blockTimer);
@@ -660,87 +622,7 @@
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && viewer.classList.contains("open")) closeViewer();
   });
-
-  // ---- Install diagnostics (so install issues can be seen without dev tools) ----
-  const diagToggle = document.getElementById("diagToggle");
-  const diagList = document.getElementById("diagList");
-
-  async function runDiagnostics() {
-    const rows = [];
-    const ok = (label) => `✔ ${label}`;
-    const bad = (label) => `✘ ${label}`;
-
-    rows.push(
-      location.protocol === "https:" || location.hostname === "localhost"
-        ? ok("Served over HTTPS")
-        : bad("Not HTTPS — install requires it")
-    );
-
-    try {
-      const res = await fetch("manifest.json", { cache: "no-store" });
-      if (!res.ok) throw new Error(res.status);
-      const ct = res.headers.get("content-type") || "";
-      await res.clone().json();
-      rows.push(ok("manifest.json loads and parses"));
-      if (!/json/.test(ct)) rows.push(bad(`manifest served as "${ct || "unknown type"}", expected JSON`));
-    } catch (err) {
-      rows.push(bad("manifest.json failed: " + err.message));
-    }
-
-    for (const icon of ["icons/icon-192.png", "icons/icon-512.png"]) {
-      try {
-        const r = await fetch(icon, { cache: "no-store" });
-        rows.push(r.ok ? ok(icon + " reachable") : bad(icon + " → HTTP " + r.status));
-      } catch {
-        rows.push(bad(icon + " unreachable"));
-      }
-    }
-
-    if ("serviceWorker" in navigator) {
-      try {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg && reg.active) rows.push(ok("Service worker active"));
-        else if (reg) rows.push(bad("Service worker registered but not active yet — reload once more"));
-        else rows.push(bad("No service worker registered"));
-      } catch (err) {
-        rows.push(bad("Service worker error: " + err.message));
-      }
-    } else {
-      rows.push(bad("Browser has no service worker support"));
-    }
-
-    rows.push(isStandalone ? ok("Already running as installed app") : "— Not yet installed —");
-
-    const ua = navigator.userAgent;
-    const isFirefox = /firefox/i.test(ua);
-    const isSamsung = /samsungbrowser/i.test(ua);
-    const isEdge = /edg\//i.test(ua);
-    const isChrome = /chrome\/|crios\//i.test(ua) && !isEdge && !isSamsung;
-    const isInAppBrowser = /fban|fbav|instagram|line\/|micromessenger|twitter/i.test(ua);
-    const isChromeIOS = /crios/i.test(ua);
-
-    if (isIOS && isChromeIOS) {
-      rows.push(bad("Chrome on iOS uses Apple's engine — no install prompt exists here either; use Safari's Share menu instead"));
-    } else if (isIOS) {
-      rows.push("iOS: use Share → Add to Home Screen (no auto-prompt exists on any iOS browser)");
-    } else if (isInAppBrowser) {
-      rows.push(bad("Opened inside another app's built-in browser (e.g. Instagram/WhatsApp/Messenger) — these block installing. Open this link in Chrome/Edge/Samsung Internet directly instead"));
-    } else if (isFirefox) {
-      rows.push(bad("Firefox doesn't support automatic install prompts — use the browser menu → \"Install\" if offered, or Chrome/Edge for one-tap install"));
-    } else if (isChrome || isEdge || isSamsung) {
-      rows.push(deferredPrompt ? ok("Install prompt is available now") : "Prompt hasn't fired yet — reload the page once via its https:// URL (not from a share/preview link), and make sure all checks above are ✔");
-    } else {
-      rows.push("Unrecognized browser — automatic install prompts are Chrome/Edge/Samsung Internet only");
-    }
-
-    diagList.innerHTML = rows.map((r) => `<li>${r}</li>`).join("");
-  }
-
-  diagToggle?.addEventListener("click", () => {
-    const showing = diagList.style.display !== "none";
-    diagList.style.display = showing ? "none" : "block";
-    if (!showing) runDiagnostics();
-  });
+})();
 </script>
 
 </body>

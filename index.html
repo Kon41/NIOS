@@ -386,6 +386,58 @@
   .notes-block{ margin-bottom:14px; }
   .notes-block:last-child{ margin-bottom:0; }
   .notes-block .subj-label{ font-weight:600; font-size:13.5px; margin-bottom:6px; display:block; }
+
+  .search-wrap{ padding:16px 20px 4px; }
+  .search-wrap input{
+    width:100%; padding:11px 12px; font-size:14px; border:1.5px solid var(--line);
+    border-radius:9px; background:var(--card-bg); color:var(--ink); font-family:inherit;
+  }
+  #tabLinks{ display:flex; flex-direction:column; }
+  .pin-star{
+    background:none; border:none; color:var(--muted); font-size:17px; cursor:pointer;
+    padding:0 6px; align-self:center; line-height:1;
+  }
+  .pin-star.pinned{ color:var(--marigold); }
+
+  .streak-row{ display:flex; gap:12px; text-align:center; }
+  .streak-box{
+    flex:1; background:var(--parchment-2); border-radius:10px; padding:12px 8px;
+  }
+  .streak-box .num{ font-family:"Fraunces", serif; font-size:26px; font-weight:700; color:var(--indigo-2); }
+  .streak-box .lbl{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+
+  .timer-display{
+    font-family:"IBM Plex Mono", monospace; font-size:44px; font-weight:600; text-align:center;
+    color:var(--indigo-2); margin:6px 0 12px;
+  }
+  .timer-controls{ display:flex; gap:8px; }
+  .timer-controls button{
+    flex:1; border:1px solid var(--line); background:var(--parchment-2); color:var(--indigo-2);
+    border-radius:9px; padding:10px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .timer-controls button.primary{ background:var(--indigo); color:var(--parchment); border-color:var(--indigo); }
+  .timer-presets{ display:flex; gap:8px; margin-bottom:12px; }
+  .timer-presets button{
+    flex:1; border:1px solid var(--line); background:var(--card-bg); color:var(--indigo-2);
+    border-radius:9px; padding:8px; font-size:12.5px; cursor:pointer; font-family:inherit;
+  }
+  .timer-presets button.active{ background:var(--indigo); color:var(--parchment); border-color:var(--indigo); }
+
+  .assign-item{ display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .assign-item:last-child{ border-bottom:none; }
+  .assign-item.overdue .assign-due{ color:var(--red); font-weight:600; }
+  .assign-item.done .assign-title{ text-decoration:line-through; color:var(--muted); }
+  .assign-item input[type="checkbox"]{ width:18px; height:18px; margin-top:2px; }
+  .assign-title{ font-weight:600; font-size:14px; }
+  .assign-due{ font-size:12px; color:var(--muted); }
+  .assign-del{ background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; margin-left:auto; }
+
+  .backup-row{ display:flex; gap:8px; }
+  .backup-row button, .backup-row label{
+    flex:1; text-align:center; border:1px solid var(--line); background:var(--parchment-2);
+    color:var(--indigo-2); border-radius:9px; padding:10px; font-weight:600; cursor:pointer;
+    font-family:inherit; font-size:13.5px;
+  }
 </style>
 </head>
 <body>
@@ -448,6 +500,10 @@
   </div>
 
   <main id="tabLinks">
+
+    <div class="search-wrap">
+      <input type="text" id="linkSearch" placeholder="Search links…" />
+    </div>
 
     <p class="section-title"><span>Dashboard &amp; Login</span><span class="ref">REF · SDMIS</span></p>
 
@@ -624,6 +680,16 @@
     </div>
     <p class="hint" style="margin:0 20px 18px;">Stored only on this device (localStorage) — never sent anywhere. "Copy" lets you paste your enrollment number straight into an official NIOS form.</p>
 
+    <p class="section-title"><span>Study Streak</span><span class="ref">LOCAL · DAILY CHECK-IN</span></p>
+
+    <div class="panel-card">
+      <div class="streak-row">
+        <div class="streak-box"><div class="num" id="streakCurrent">0</div><div class="lbl">Current</div></div>
+        <div class="streak-box"><div class="num" id="streakLongest">0</div><div class="lbl">Longest</div></div>
+      </div>
+      <button type="button" id="checkinBtn">Check in for today</button>
+    </div>
+
     <p class="section-title"><span>Exam Countdown</span><span class="ref">LOCAL REMINDERS</span></p>
 
     <div class="panel-card">
@@ -638,10 +704,50 @@
       <ul class="exam-list" id="examList"></ul>
     </div>
 
+    <p class="section-title"><span>Assignments &amp; TMA</span><span class="ref">LOCAL · TRACKER</span></p>
+
+    <div class="panel-card">
+      <div class="exam-add-row">
+        <input type="text" id="assignSubject" placeholder="Subject" />
+        <input type="text" id="assignTitle" placeholder="e.g. TMA 1" />
+        <input type="date" id="assignDue" />
+        <button type="button" id="addAssignBtn">Add</button>
+      </div>
+      <div id="assignList"></div>
+    </div>
+
+    <p class="section-title"><span>Study Timer</span><span class="ref">LOCAL · FOCUS SESSIONS</span></p>
+
+    <div class="panel-card">
+      <div class="timer-presets">
+        <button type="button" class="timer-preset active" data-min="25">25 min</button>
+        <button type="button" class="timer-preset" data-min="45">45 min</button>
+        <button type="button" class="timer-preset" data-min="60">60 min</button>
+      </div>
+      <div class="timer-display" id="timerDisplay">25:00</div>
+      <div class="timer-controls">
+        <button type="button" class="primary" id="timerStartBtn">Start</button>
+        <button type="button" id="timerResetBtn">Reset</button>
+      </div>
+      <p class="hint" style="margin-bottom:0;" id="timerStatsHint">0 sessions completed today</p>
+    </div>
+
     <p class="section-title"><span>Quick Notes</span><span class="ref">LOCAL · PER SUBJECT</span></p>
 
     <div class="panel-card" id="notesWrap">
       <p class="hint" id="notesEmptyHint" style="margin:0;">Add subjects in "My Profile" above to start taking per-subject notes here.</p>
+    </div>
+
+    <p class="section-title"><span>Backup &amp; Restore</span><span class="ref">LOCAL · JSON FILE</span></p>
+
+    <div class="panel-card">
+      <p class="hint" style="margin-top:0;">Everything above lives only in this browser. Export a backup before clearing your browser data or switching devices, then import it back here.</p>
+      <div class="backup-row">
+        <button type="button" id="exportBtn">Export backup</button>
+        <label for="importFile">Import backup
+          <input type="file" id="importFile" accept="application/json" style="display:none;" />
+        </label>
+      </div>
     </div>
 
   </section>
@@ -703,7 +809,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx4PSyrMbYq6GNroCYcB3Fvf1D_oy0Du6kBaT6PAowoDYEXyP_yhvRijsihtchYDm5jCw/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -1315,10 +1421,306 @@
     });
   }
 
+  /* ===================== Link search + pin ===================== */
+  const linkSearch = document.getElementById("linkSearch");
+  const tabLinksMain = document.getElementById("tabLinks");
+  const PINNED_KEY = "nios_pinned_links";
+
+  function getPinned() {
+    try { return JSON.parse(localStorage.getItem(PINNED_KEY) || "[]"); } catch { return []; }
+  }
+  function savePinned(list) { localStorage.setItem(PINNED_KEY, JSON.stringify(list)); }
+
+  function setupPinStars() {
+    const pinned = getPinned();
+    document.querySelectorAll(".js-stub").forEach((stub) => {
+      const url = stub.dataset.url;
+      if (stub.querySelector(".pin-star")) return; // already set up
+      const star = document.createElement("button");
+      star.type = "button";
+      star.className = "pin-star" + (pinned.includes(url) ? " pinned" : "");
+      star.textContent = pinned.includes(url) ? "★" : "☆";
+      star.setAttribute("aria-label", "Pin this link");
+      if (pinned.includes(url)) stub.style.order = -1;
+      star.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        let list = getPinned();
+        if (list.includes(url)) {
+          list = list.filter((u) => u !== url);
+          star.classList.remove("pinned");
+          star.textContent = "☆";
+          stub.style.order = "";
+        } else {
+          list.push(url);
+          star.classList.add("pinned");
+          star.textContent = "★";
+          stub.style.order = -1;
+        }
+        savePinned(list);
+      });
+      const goEl = stub.querySelector(".go");
+      stub.querySelector(".content").insertBefore(star, goEl);
+    });
+  }
+
+  linkSearch.addEventListener("input", () => {
+    const q = linkSearch.value.trim().toLowerCase();
+    const children = Array.from(tabLinksMain.children);
+    let currentTitle = null, anyVisible = false;
+    children.forEach((el) => {
+      if (el.classList.contains("section-title")) {
+        if (currentTitle) currentTitle.style.display = anyVisible ? "" : "none";
+        currentTitle = el;
+        anyVisible = false;
+        return;
+      }
+      if (el.classList.contains("stub")) {
+        const match = !q || el.textContent.toLowerCase().includes(q);
+        el.style.display = match ? "" : "none";
+        if (match) anyVisible = true;
+      }
+    });
+    if (currentTitle) currentTitle.style.display = anyVisible ? "" : "none";
+  });
+
+  /* ===================== Study streak ===================== */
+  const STREAK_KEY = "nios_streak_days";
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  function getStreakDays() {
+    try { return JSON.parse(localStorage.getItem(STREAK_KEY) || "[]"); } catch { return []; }
+  }
+  function computeStreaks(days) {
+    const set = new Set(days);
+    let current = 0;
+    let cursor = new Date();
+    while (set.has(dateKey(cursor))) {
+      current++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    let longest = 0, run = 0;
+    const sorted = days.slice().sort();
+    for (let i = 0; i < sorted.length; i++) {
+      if (i === 0) { run = 1; } else {
+        const prev = new Date(sorted[i - 1]);
+        const cur = new Date(sorted[i]);
+        const diffDays = Math.round((cur - prev) / 86400000);
+        run = diffDays === 1 ? run + 1 : 1;
+      }
+      longest = Math.max(longest, run);
+    }
+    return { current, longest: Math.max(longest, current) };
+  }
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  function renderStreak() {
+    const days = getStreakDays();
+    const { current, longest } = computeStreaks(days);
+    document.getElementById("streakCurrent").textContent = current;
+    document.getElementById("streakLongest").textContent = longest;
+    const btn = document.getElementById("checkinBtn");
+    if (days.includes(todayStr())) {
+      btn.textContent = "Checked in for today ✓";
+      btn.disabled = true;
+    } else {
+      btn.textContent = "Check in for today";
+      btn.disabled = false;
+    }
+  }
+  document.getElementById("checkinBtn").addEventListener("click", () => {
+    const days = getStreakDays();
+    if (!days.includes(todayStr())) {
+      days.push(todayStr());
+      localStorage.setItem(STREAK_KEY, JSON.stringify(days));
+      renderStreak();
+    }
+  });
+
+  /* ===================== Assignments / TMA tracker ===================== */
+  const ASSIGN_KEY = "nios_assignments";
+  const assignList = document.getElementById("assignList");
+  function getAssignments() {
+    try { return JSON.parse(localStorage.getItem(ASSIGN_KEY) || "[]"); } catch { return []; }
+  }
+  function saveAssignments(list) { localStorage.setItem(ASSIGN_KEY, JSON.stringify(list)); }
+  function renderAssignments() {
+    const list = getAssignments().slice().sort((a, b) => (a.due || "").localeCompare(b.due || ""));
+    assignList.innerHTML = "";
+    if (!list.length) {
+      assignList.innerHTML = '<p class="hint" style="margin:0;">No assignments added yet.</p>';
+      return;
+    }
+    const today = todayStr();
+    list.forEach((a) => {
+      const overdue = a.due && a.due < today && !a.done;
+      const row = document.createElement("div");
+      row.className = "assign-item" + (a.done ? " done" : "") + (overdue ? " overdue" : "");
+      row.innerHTML = `
+        <input type="checkbox" ${a.done ? "checked" : ""} data-id="${a.id}" class="assign-check" />
+        <span>
+          <span class="assign-title">${escapeHtml(a.subject)} — ${escapeHtml(a.title)}</span><br/>
+          <span class="assign-due">${a.due ? "Due " + a.due : "No due date"}</span>
+        </span>
+        <button type="button" class="assign-del" data-id="${a.id}" aria-label="Delete">✕</button>`;
+      assignList.appendChild(row);
+    });
+    assignList.querySelectorAll(".assign-check").forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const list2 = getAssignments();
+        const item = list2.find((x) => x.id === cb.dataset.id);
+        if (item) { item.done = cb.checked; saveAssignments(list2); renderAssignments(); }
+      });
+    });
+    assignList.querySelectorAll(".assign-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        saveAssignments(getAssignments().filter((x) => x.id !== btn.dataset.id));
+        renderAssignments();
+      });
+    });
+  }
+  document.getElementById("addAssignBtn").addEventListener("click", () => {
+    const subject = document.getElementById("assignSubject").value.trim();
+    const title = document.getElementById("assignTitle").value.trim();
+    const due = document.getElementById("assignDue").value;
+    if (!subject || !title) return;
+    const list = getAssignments();
+    list.push({ id: String(Date.now()), subject, title, due, done: false });
+    saveAssignments(list);
+    document.getElementById("assignSubject").value = "";
+    document.getElementById("assignTitle").value = "";
+    document.getElementById("assignDue").value = "";
+    renderAssignments();
+  });
+
+  /* ===================== Study timer ===================== */
+  const TIMER_STATS_KEY = "nios_timer_sessions";
+  let timerMinutes = 25;
+  let timerSecondsLeft = timerMinutes * 60;
+  let timerInterval = null;
+  let timerRunning = false;
+  const timerDisplay = document.getElementById("timerDisplay");
+  const timerStartBtn = document.getElementById("timerStartBtn");
+
+  function fmtTimer(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+  function renderTimer() { timerDisplay.textContent = fmtTimer(timerSecondsLeft); }
+
+  document.querySelectorAll(".timer-preset").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (timerRunning) return;
+      document.querySelectorAll(".timer-preset").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      timerMinutes = Number(btn.dataset.min);
+      timerSecondsLeft = timerMinutes * 60;
+      renderTimer();
+    });
+  });
+
+  function recordTimerSession() {
+    let stats;
+    try { stats = JSON.parse(localStorage.getItem(TIMER_STATS_KEY) || "{}"); } catch { stats = {}; }
+    const key = todayStr();
+    stats[key] = (stats[key] || 0) + 1;
+    localStorage.setItem(TIMER_STATS_KEY, JSON.stringify(stats));
+    renderTimerStats();
+  }
+  function renderTimerStats() {
+    let stats;
+    try { stats = JSON.parse(localStorage.getItem(TIMER_STATS_KEY) || "{}"); } catch { stats = {}; }
+    const count = stats[todayStr()] || 0;
+    document.getElementById("timerStatsHint").textContent = `${count} session${count === 1 ? "" : "s"} completed today`;
+  }
+
+  timerStartBtn.addEventListener("click", () => {
+    if (timerRunning) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerStartBtn.textContent = "Resume";
+      return;
+    }
+    timerRunning = true;
+    timerStartBtn.textContent = "Pause";
+    timerInterval = setInterval(() => {
+      timerSecondsLeft--;
+      renderTimer();
+      if (timerSecondsLeft <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        timerStartBtn.textContent = "Start";
+        recordTimerSession();
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("Focus session complete", { body: "Nice work — take a short break." });
+        }
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        timerSecondsLeft = timerMinutes * 60;
+        renderTimer();
+      }
+    }, 1000);
+  });
+
+  document.getElementById("timerResetBtn").addEventListener("click", () => {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timerStartBtn.textContent = "Start";
+    timerSecondsLeft = timerMinutes * 60;
+    renderTimer();
+  });
+
+  /* ===================== Backup & restore ===================== */
+  const BACKUP_KEYS = [
+    "nios_theme", "nios_profile", "nios_exams", "nios_notes",
+    "nios_pinned_links", "nios_assignments", "nios_streak_days", "nios_timer_sessions"
+  ];
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    const data = {};
+    BACKUP_KEYS.forEach((k) => {
+      const v = localStorage.getItem(k);
+      if (v !== null) data[k] = v;
+    });
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), data }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `nios-portal-backup-${todayStr()}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById("importFile").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const data = parsed.data || parsed;
+        Object.keys(data).forEach((k) => {
+          if (BACKUP_KEYS.includes(k)) localStorage.setItem(k, data[k]);
+        });
+        alert("Backup restored. The page will now reload.");
+        location.reload();
+      } catch (err) {
+        alert("That file doesn't look like a valid backup.");
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+  });
+
   /* ===================== Init ===================== */
   renderProfile();
   renderExams();
   checkExamReminders();
+  setupPinStars();
+  renderStreak();
+  renderAssignments();
+  renderTimer();
+  renderTimerStats();
   if ("Notification" in window && Notification.permission === "granted") {
     document.getElementById("enableNotifBtn").textContent = "Notifications enabled ✓";
   }

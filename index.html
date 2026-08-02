@@ -27,7 +27,22 @@
     --red:#A5432E;
     --line:#D8CFBE;
     --muted:#6B6455;
+    --card-bg:#FFFFFF;
     --radius:14px;
+  }
+  :root[data-theme="dark"]{
+    --indigo:#1B2E54;
+    --indigo-2:#26406F;
+    --ink:#EDE7D8;
+    --parchment:#12141C;
+    --parchment-2:#1A1D28;
+    --marigold:#E3A25E;
+    --marigold-2:#D98E3B;
+    --green:#5C9873;
+    --red:#D77860;
+    --line:#333B4D;
+    --muted:#9A93A6;
+    --card-bg:#1D2130;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -125,7 +140,7 @@
 
   .stub{
     display:flex; align-items:stretch; text-decoration:none;
-    background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius);
     margin-bottom:10px; position:relative;
     box-shadow:0 1px 0 rgba(28,35,51,0.02);
     transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
@@ -248,7 +263,7 @@
     overflow-y:auto;
   }
   .login-card{
-    width:100%; max-width:380px; background:#fff; border:1px solid var(--line);
+    width:100%; max-width:380px; background:var(--card-bg); border:1px solid var(--line);
     border-radius:16px; padding:26px 22px 22px; box-shadow:0 10px 30px rgba(28,35,51,0.08);
   }
   .login-card .badge{
@@ -293,6 +308,84 @@
   }
   .login-card .switch-row button.active{ background:var(--indigo); color:var(--parchment); border-color:var(--indigo); }
   #mainWrap{ display:none; }
+
+  /* ---- theme toggle ---- */
+  .theme-toggle{
+    position:absolute; top:20px; right:20px;
+    width:36px; height:36px; border-radius:50%;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25);
+    color:var(--parchment); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ---- tab bar ---- */
+  .tabbar{
+    display:flex; gap:8px; padding:14px 20px 0; background:var(--parchment);
+  }
+  .tab-btn{
+    flex:1; padding:10px 8px; font-size:13px; font-weight:600;
+    border:1px solid var(--line); background:var(--card-bg); color:var(--indigo-2);
+    border-radius:10px; cursor:pointer; font-family:inherit;
+  }
+  .tab-btn.active{ background:var(--indigo); color:var(--parchment); border-color:var(--indigo); }
+
+  /* ---- dashboard panel cards ---- */
+  .panel-card{
+    background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px; margin:0 20px 14px;
+  }
+  .panel-card label{
+    display:block; font-size:11px; font-weight:600; color:var(--indigo-2);
+    text-transform:uppercase; letter-spacing:0.05em; margin:10px 0 5px;
+  }
+  .panel-card label:first-child{ margin-top:0; }
+  .panel-card input, .panel-card textarea{
+    width:100%; padding:10px 11px; font-size:14.5px; border:1.5px solid var(--line);
+    border-radius:9px; background:var(--parchment); color:var(--ink); font-family:inherit;
+  }
+  .panel-card textarea{ min-height:90px; resize:vertical; }
+  .panel-card > button, .panel-card .full-btn{
+    width:100%; background:var(--indigo); color:var(--parchment); border:none;
+    border-radius:9px; padding:11px 14px; font-size:14px; font-weight:600;
+    cursor:pointer; margin-top:12px; font-family:inherit;
+  }
+  .mini-btn{
+    background:none; border:1px solid var(--line); color:var(--indigo-2);
+    border-radius:7px; padding:5px 10px; font-size:12px; font-weight:600;
+    cursor:pointer; font-family:inherit;
+  }
+  .profile-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 0; border-bottom:1px solid var(--line); font-size:14px;
+  }
+  .profile-row:last-of-type{ border-bottom:none; }
+  .profile-label{ color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.05em; }
+  .hint{ font-size:12.5px; color:var(--muted); line-height:1.5; margin:6px 0 10px; }
+
+  .exam-add-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .exam-add-row input{ flex:1; min-width:110px; }
+  .exam-add-row button{
+    background:var(--indigo); color:var(--parchment); border:none; border-radius:9px;
+    padding:10px 16px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .exam-list{ list-style:none; margin:14px 0 0; padding:0; }
+  .exam-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 0; border-bottom:1px solid var(--line);
+  }
+  .exam-item:last-child{ border-bottom:none; }
+  .exam-item .exam-when{ font-size:12px; color:var(--muted); }
+  .exam-item .exam-count{
+    font-family:"IBM Plex Mono", monospace; font-size:12.5px; font-weight:600;
+    padding:3px 8px; border-radius:6px; background:var(--parchment-2); color:var(--indigo-2);
+  }
+  .exam-item .exam-count.soon{ background:var(--red); color:#fff; }
+  .exam-item .exam-del{
+    background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; padding:0 4px;
+  }
+  .notes-block{ margin-bottom:14px; }
+  .notes-block:last-child{ margin-bottom:0; }
+  .notes-block .subj-label{ font-weight:600; font-size:13.5px; margin-bottom:6px; display:block; }
 </style>
 </head>
 <body>
@@ -327,6 +420,7 @@
   <div id="mainWrap">
 
   <header class="letterhead">
+    <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
     <div class="badge-row">
       <div class="badge">N</div>
       <div>
@@ -348,7 +442,12 @@
     </div>
   </header>
 
-  <main>
+  <div class="tabbar">
+    <button type="button" class="tab-btn active" id="tabBtnLinks">Quick Links</button>
+    <button type="button" class="tab-btn" id="tabBtnDashboard">My NIOS</button>
+  </div>
+
+  <main id="tabLinks">
 
     <p class="section-title"><span>Dashboard &amp; Login</span><span class="ref">REF · SDMIS</span></p>
 
@@ -426,6 +525,39 @@
       </div>
     </a>
 
+    <a class="stub js-stub" href="https://www.nios.ac.in/student-information-section/question-paper-of-previous-year-examination-academic.aspx" data-url="https://www.nios.ac.in/student-information-section/question-paper-of-previous-year-examination-academic.aspx">
+      <div class="tear"><span>PYQ</span></div>
+      <div class="content">
+        <div class="text">
+          <p class="name">Previous Year Question Papers</p>
+          <span class="domain">nios.ac.in/student-information-section/…</span>
+        </div>
+        <div class="go">→</div>
+      </div>
+    </a>
+
+    <a class="stub js-stub" href="https://www.nios.ac.in/student-information-section/syllabus-sample-question-paper(secondary).aspx" data-url="https://www.nios.ac.in/student-information-section/syllabus-sample-question-paper(secondary).aspx">
+      <div class="tear"><span>SYL</span></div>
+      <div class="content">
+        <div class="text">
+          <p class="name">Syllabus &amp; Sample Papers — Secondary</p>
+          <span class="domain">nios.ac.in/…/syllabus-sample-question-paper(secondary)</span>
+        </div>
+        <div class="go">→</div>
+      </div>
+    </a>
+
+    <a class="stub js-stub" href="https://www.nios.ac.in/student-information-section/syllabus-sample-question-paper(sr-secondary).aspx" data-url="https://www.nios.ac.in/student-information-section/syllabus-sample-question-paper(sr-secondary).aspx">
+      <div class="tear"><span>SYL</span></div>
+      <div class="content">
+        <div class="text">
+          <p class="name">Syllabus &amp; Sample Papers — Senior Secondary</p>
+          <span class="domain">nios.ac.in/…/syllabus-sample-question-paper(sr-secondary)</span>
+        </div>
+        <div class="go">→</div>
+      </div>
+    </a>
+
     <a class="stub js-stub" href="https://sdmis.nios.ac.in/registration/home-notifications" data-url="https://sdmis.nios.ac.in/registration/home-notifications">
       <div class="tear"><span>NOTICE</span></div>
       <div class="content">
@@ -469,6 +601,51 @@
     </footer>
 
   </main>
+
+  <section id="tabDashboard" class="tab-panel" style="display:none; padding-top:14px;">
+
+    <p class="section-title"><span>My Profile</span><span class="ref">LOCAL · ON THIS DEVICE</span></p>
+
+    <div class="panel-card" id="profileView" style="display:none;">
+      <div class="profile-row"><span class="profile-label">Name</span><span id="profName">—</span></div>
+      <div class="profile-row"><span class="profile-label">Enrollment No.</span><span><span id="profEnroll">—</span> <button type="button" class="mini-btn" id="copyEnrollBtn">Copy</button></span></div>
+      <div class="profile-row" style="align-items:flex-start;"><span class="profile-label">Subjects</span><span id="profSubjects">—</span></div>
+      <button type="button" class="mini-btn" id="editProfileBtn" style="margin-top:12px;">Edit profile</button>
+    </div>
+
+    <div class="panel-card" id="profileForm">
+      <label for="pfName">Name</label>
+      <input type="text" id="pfName" placeholder="Your name" />
+      <label for="pfEnroll">Enrollment number</label>
+      <input type="text" id="pfEnroll" placeholder="e.g. 1234567890" inputmode="numeric" />
+      <label for="pfSubjects">Subjects (comma-separated)</label>
+      <input type="text" id="pfSubjects" placeholder="English, Mathematics, Science" />
+      <button type="button" id="saveProfileBtn">Save profile</button>
+    </div>
+    <p class="hint" style="margin:0 20px 18px;">Stored only on this device (localStorage) — never sent anywhere. "Copy" lets you paste your enrollment number straight into an official NIOS form.</p>
+
+    <p class="section-title"><span>Exam Countdown</span><span class="ref">LOCAL REMINDERS</span></p>
+
+    <div class="panel-card">
+      <div class="exam-add-row">
+        <input type="text" id="examSubject" placeholder="Subject" />
+        <input type="date" id="examDate" />
+        <input type="time" id="examTime" />
+        <button type="button" id="addExamBtn">Add</button>
+      </div>
+      <p class="hint">These check whenever you open this app, and can pop a browser notification if you allow it below — they can't wake your phone in the background on their own.</p>
+      <button type="button" class="mini-btn" id="enableNotifBtn">Enable notifications</button>
+      <ul class="exam-list" id="examList"></ul>
+    </div>
+
+    <p class="section-title"><span>Quick Notes</span><span class="ref">LOCAL · PER SUBJECT</span></p>
+
+    <div class="panel-card" id="notesWrap">
+      <p class="hint" id="notesEmptyHint" style="margin:0;">Add subjects in "My Profile" above to start taking per-subject notes here.</p>
+    </div>
+
+  </section>
+
 
   <div class="viewer" id="viewer" aria-hidden="true">
     <div class="viewer-bar">
@@ -526,7 +703,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbygT2V6ntx4qpUgg0NaqJiqu6LLSCIjJnCdLe3GX78WQiJpPl7STTHKLhuR58WkTHjq4Q/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -903,6 +1080,248 @@
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && viewer.classList.contains("open")) closeViewer();
   });
+})();
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===================== Dark mode ===================== */
+  const THEME_KEY = "nios_theme";
+  const themeToggle = document.getElementById("themeToggle");
+  function applyTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    themeToggle.textContent = t === "dark" ? "☀️" : "🌙";
+  }
+  applyTheme(localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light");
+  themeToggle.addEventListener("click", () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
+
+  /* ===================== Tabs ===================== */
+  const tabLinks = document.getElementById("tabLinks");
+  const tabDashboard = document.getElementById("tabDashboard");
+  const tabBtnLinks = document.getElementById("tabBtnLinks");
+  const tabBtnDashboard = document.getElementById("tabBtnDashboard");
+  function showTab(which) {
+    const onLinks = which === "links";
+    tabLinks.style.display = onLinks ? "" : "none";
+    tabDashboard.style.display = onLinks ? "none" : "block";
+    tabBtnLinks.classList.toggle("active", onLinks);
+    tabBtnDashboard.classList.toggle("active", !onLinks);
+  }
+  tabBtnLinks.addEventListener("click", () => showTab("links"));
+  tabBtnDashboard.addEventListener("click", () => showTab("dashboard"));
+
+  /* ===================== Profile ===================== */
+  const PROFILE_KEY = "nios_profile";
+  const profileView = document.getElementById("profileView");
+  const profileForm = document.getElementById("profileForm");
+  const pfName = document.getElementById("pfName");
+  const pfEnroll = document.getElementById("pfEnroll");
+  const pfSubjects = document.getElementById("pfSubjects");
+  const profName = document.getElementById("profName");
+  const profEnroll = document.getElementById("profEnroll");
+  const profSubjects = document.getElementById("profSubjects");
+
+  function getProfile() {
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); } catch { return null; }
+  }
+  function subjectsFromInput(v) {
+    return v.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  function renderProfile() {
+    const p = getProfile();
+    if (p && (p.name || p.enroll || (p.subjects && p.subjects.length))) {
+      profName.textContent = p.name || "—";
+      profEnroll.textContent = p.enroll || "—";
+      profSubjects.textContent = p.subjects && p.subjects.length ? p.subjects.join(", ") : "—";
+      profileView.style.display = "block";
+      profileForm.style.display = "none";
+    } else {
+      profileView.style.display = "none";
+      profileForm.style.display = "block";
+    }
+    renderNotes();
+  }
+
+  document.getElementById("saveProfileBtn").addEventListener("click", () => {
+    const profile = {
+      name: pfName.value.trim(),
+      enroll: pfEnroll.value.trim(),
+      subjects: subjectsFromInput(pfSubjects.value)
+    };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    renderProfile();
+  });
+
+  document.getElementById("editProfileBtn").addEventListener("click", () => {
+    const p = getProfile() || {};
+    pfName.value = p.name || "";
+    pfEnroll.value = p.enroll || "";
+    pfSubjects.value = (p.subjects || []).join(", ");
+    profileView.style.display = "none";
+    profileForm.style.display = "block";
+  });
+
+  document.getElementById("copyEnrollBtn").addEventListener("click", () => {
+    const p = getProfile();
+    if (!p || !p.enroll) return;
+    navigator.clipboard?.writeText(p.enroll).then(() => {
+      const btn = document.getElementById("copyEnrollBtn");
+      const old = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => (btn.textContent = old), 1200);
+    });
+  });
+
+  /* ===================== Exam countdown + reminders ===================== */
+  const EXAMS_KEY = "nios_exams";
+  const NOTIFIED_KEY = "nios_exams_notified";
+  const examList = document.getElementById("examList");
+
+  function getExams() {
+    try { return JSON.parse(localStorage.getItem(EXAMS_KEY) || "[]"); } catch { return []; }
+  }
+  function saveExams(list) { localStorage.setItem(EXAMS_KEY, JSON.stringify(list)); }
+
+  function fmtCountdown(ms) {
+    if (ms <= 0) return { label: "Today", soon: true };
+    const days = Math.floor(ms / 86400000);
+    const hours = Math.floor((ms % 86400000) / 3600000);
+    if (days === 0) return { label: `In ${hours}h`, soon: true };
+    if (days <= 3) return { label: `In ${days}d ${hours}h`, soon: true };
+    return { label: `In ${days}d`, soon: false };
+  }
+
+  function renderExams() {
+    const list = getExams().slice().sort((a, b) => a.when - b.when);
+    examList.innerHTML = "";
+    if (!list.length) {
+      examList.innerHTML = '<li class="exam-item"><span class="hint" style="margin:0;">No exams added yet.</span></li>';
+      return;
+    }
+    const now = Date.now();
+    list.forEach((exam) => {
+      const c = fmtCountdown(exam.when - now);
+      const li = document.createElement("li");
+      li.className = "exam-item";
+      const dt = new Date(exam.when);
+      li.innerHTML = `
+        <span>
+          <strong>${escapeHtml(exam.subject)}</strong><br/>
+          <span class="exam-when">${dt.toLocaleDateString()} ${exam.hasTime ? dt.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : ""}</span>
+        </span>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span class="exam-count ${c.soon ? "soon" : ""}">${c.label}</span>
+          <button type="button" class="exam-del" data-id="${exam.id}" aria-label="Delete">✕</button>
+        </span>`;
+      examList.appendChild(li);
+    });
+    examList.querySelectorAll(".exam-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        saveExams(getExams().filter((e) => e.id !== btn.dataset.id));
+        renderExams();
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  document.getElementById("addExamBtn").addEventListener("click", () => {
+    const subject = document.getElementById("examSubject").value.trim();
+    const dateVal = document.getElementById("examDate").value;
+    const timeVal = document.getElementById("examTime").value;
+    if (!subject || !dateVal) return;
+    const when = new Date(dateVal + "T" + (timeVal || "09:00")).getTime();
+    const exams = getExams();
+    exams.push({ id: String(Date.now()), subject, when, hasTime: !!timeVal });
+    saveExams(exams);
+    document.getElementById("examSubject").value = "";
+    document.getElementById("examDate").value = "";
+    document.getElementById("examTime").value = "";
+    renderExams();
+  });
+
+  document.getElementById("enableNotifBtn").addEventListener("click", () => {
+    if (!("Notification" in window)) {
+      alert("Notifications aren't supported in this browser.");
+      return;
+    }
+    Notification.requestPermission().then((perm) => {
+      document.getElementById("enableNotifBtn").textContent =
+        perm === "granted" ? "Notifications enabled ✓" : "Notifications blocked";
+      checkExamReminders();
+    });
+  });
+
+  // Best-effort reminder: fires when the app is opened and an exam is
+  // within 48 hours, once per exam (tracked so it doesn't repeat every load).
+  function checkExamReminders() {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    let notified;
+    try { notified = JSON.parse(localStorage.getItem(NOTIFIED_KEY) || "[]"); } catch { notified = []; }
+    const now = Date.now();
+    getExams().forEach((exam) => {
+      const diff = exam.when - now;
+      if (diff > 0 && diff <= 48 * 3600000 && !notified.includes(exam.id)) {
+        new Notification("Upcoming NIOS exam", {
+          body: `${exam.subject} — ${new Date(exam.when).toLocaleString()}`
+        });
+        notified.push(exam.id);
+      }
+    });
+    localStorage.setItem(NOTIFIED_KEY, JSON.stringify(notified));
+  }
+
+  /* ===================== Notes (per subject) ===================== */
+  const NOTES_KEY = "nios_notes";
+  const notesWrap = document.getElementById("notesWrap");
+  const notesEmptyHint = document.getElementById("notesEmptyHint");
+
+  function getNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || "{}"); } catch { return {}; }
+  }
+  function renderNotes() {
+    const p = getProfile();
+    const subjects = (p && p.subjects) || [];
+    notesWrap.innerHTML = "";
+    if (!subjects.length) {
+      notesWrap.appendChild(notesEmptyHint);
+      return;
+    }
+    const notes = getNotes();
+    subjects.forEach((subj) => {
+      const block = document.createElement("div");
+      block.className = "notes-block";
+      block.innerHTML = `<span class="subj-label">${escapeHtml(subj)}</span>
+        <textarea placeholder="Notes for ${escapeHtml(subj)}…">${escapeHtml(notes[subj] || "")}</textarea>`;
+      const textarea = block.querySelector("textarea");
+      let saveTimer;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          const all = getNotes();
+          all[subj] = textarea.value;
+          localStorage.setItem(NOTES_KEY, JSON.stringify(all));
+        }, 400);
+      });
+      notesWrap.appendChild(block);
+    });
+  }
+
+  /* ===================== Init ===================== */
+  renderProfile();
+  renderExams();
+  checkExamReminders();
+  if ("Notification" in window && Notification.permission === "granted") {
+    document.getElementById("enableNotifBtn").textContent = "Notifications enabled ✓";
+  }
 })();
 </script>
 

@@ -438,6 +438,27 @@
     color:var(--indigo-2); border-radius:9px; padding:10px; font-weight:600; cursor:pointer;
     font-family:inherit; font-size:13.5px;
   }
+
+  .gc-row{ display:flex; gap:8px; }
+  .gc-row input{ flex:1; }
+  #gcResult{
+    margin-top:14px; padding:14px; border-radius:10px; border:1px solid var(--line);
+    background:var(--parchment-2);
+  }
+  #gcResult.pass{ border-color:var(--green); }
+  #gcResult.fail{ border-color:var(--red); }
+  .gc-verdict{ font-family:"Fraunces", serif; font-weight:700; font-size:17px; margin-bottom:8px; }
+  .gc-verdict.pass{ color:var(--green); }
+  .gc-verdict.fail{ color:var(--red); }
+  .gc-line{ font-size:13px; color:var(--muted); display:flex; justify-content:space-between; padding:3px 0; }
+  .gc-line strong{ color:var(--ink); }
+  .gc-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .gc-item:last-child{ border-bottom:none; }
+  .gc-item .gc-badge{
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:uppercase;
+  }
+  .gc-item .gc-badge.pass{ background:var(--green); color:#fff; }
+  .gc-item .gc-badge.fail{ background:var(--red); color:#fff; }
 </style>
 </head>
 <body>
@@ -716,6 +737,54 @@
       <div id="assignList"></div>
     </div>
 
+    <p class="section-title"><span>Grade Calculator</span><span class="ref">33% PASS RULE</span></p>
+
+    <div class="panel-card">
+      <label for="gcLevel">Course level</label>
+      <select id="gcLevel">
+        <option value="secondary">Secondary (Class 10)</option>
+        <option value="sr-secondary">Senior Secondary (Class 12)</option>
+      </select>
+
+      <label for="gcSubject">Subject</label>
+      <input type="text" id="gcSubject" placeholder="e.g. Mathematics" />
+
+      <label style="display:flex; align-items:center; gap:8px; text-transform:none; font-size:13px; margin-top:12px;">
+        <input type="checkbox" id="gcHasPractical" style="width:auto; margin:0;" /> This subject has a practical
+      </label>
+
+      <label>Theory — max marks / marks obtained</label>
+      <div class="gc-row">
+        <input type="number" id="gcTheoryMax" placeholder="Max" min="0" value="80" />
+        <input type="number" id="gcTheoryObt" placeholder="Obtained" min="0" />
+      </div>
+
+      <label>TMA — max marks / marks obtained <span style="text-transform:none; font-weight:400;">(leave 0 if none)</span></label>
+      <div class="gc-row">
+        <input type="number" id="gcTmaMax" placeholder="Max" min="0" value="20" />
+        <input type="number" id="gcTmaObt" placeholder="Obtained" min="0" />
+      </div>
+
+      <div id="gcPracticalWrap" style="display:none;">
+        <label>Practical — max marks / marks obtained</label>
+        <div class="gc-row">
+          <input type="number" id="gcPracMax" placeholder="Max" min="0" value="20" />
+          <input type="number" id="gcPracObt" placeholder="Obtained" min="0" />
+        </div>
+      </div>
+
+      <button type="button" id="gcCalcBtn">Calculate</button>
+
+      <div id="gcResult" style="display:none;"></div>
+
+      <p class="hint">Based on NIOS's published 33% pass rule and 20% TMA weightage. Secondary needs 33% in the combined aggregate; Senior Secondary needs 33% separately in theory, practical, and aggregate. This is an unofficial self-check, not your actual result — always confirm on the official NIOS result portal.</p>
+    </div>
+
+    <div class="panel-card" id="gcSavedWrap" style="display:none;">
+      <p class="section-title" style="margin:0 0 10px; padding:0;"><span>Saved Subjects</span></p>
+      <div id="gcSavedList"></div>
+    </div>
+
     <p class="section-title"><span>Study Timer</span><span class="ref">LOCAL · FOCUS SESSIONS</span></p>
 
     <div class="panel-card">
@@ -809,7 +878,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx4PSyrMbYq6GNroCYcB3Fvf1D_oy0Du6kBaT6PAowoDYEXyP_yhvRijsihtchYDm5jCw/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -957,22 +1026,30 @@
     stepEmail.style.display = "block";
   });
 
-  // On load: never trust localStorage by itself — ask the server to
-  // re-verify the signed token before granting access.
+  // On load: if we hold an unexpired session, show the portal immediately
+  // (no flash of the login screen), then quietly re-check the signed token
+  // with the server in the background. Only a server that explicitly says
+  // "invalid" logs you out — a slow or dropped request never does, since
+  // that was previously kicking people back to the login screen for no
+  // real reason (e.g. Apps Script cold-start lag, a flaky connection).
   let raw;
   try { raw = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { raw = null; }
 
-  if (raw && raw.token && CONFIG.APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_WEB_APP_URL") {
-    callServer({ action: "validate", token: raw.token })
-      .then((data) => {
-        if (data && data.ok === true) {
-          showPortal();
-        } else {
-          localStorage.removeItem(SESSION_KEY);
-          showGate();
-        }
-      })
-      .catch(() => showGate());
+  if (raw && raw.token && raw.expiresAt && Date.now() < raw.expiresAt) {
+    showPortal();
+    if (CONFIG.APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_WEB_APP_URL") {
+      callServer({ action: "validate", token: raw.token })
+        .then((data) => {
+          if (!data || data.ok !== true) {
+            // Server explicitly rejected it (expired/tampered/deauthorized) — log out.
+            localStorage.removeItem(SESSION_KEY);
+            showGate();
+          }
+        })
+        .catch(() => {
+          // Network hiccup — keep the user logged in on their still-valid local session.
+        });
+    }
   } else {
     localStorage.removeItem(SESSION_KEY);
     showGate();
@@ -1295,7 +1372,11 @@
   function saveExams(list) { localStorage.setItem(EXAMS_KEY, JSON.stringify(list)); }
 
   function fmtCountdown(ms) {
-    if (ms <= 0) return { label: "Today", soon: true };
+    if (ms <= 0) {
+      const daysPast = Math.floor(-ms / 86400000);
+      if (daysPast === 0) return { label: "Today", soon: true };
+      return { label: `${daysPast}d ago`, soon: false };
+    }
     const days = Math.floor(ms / 86400000);
     const hours = Math.floor((ms % 86400000) / 3600000);
     if (days === 0) return { label: `In ${hours}h`, soon: true };
@@ -1675,7 +1756,8 @@
   /* ===================== Backup & restore ===================== */
   const BACKUP_KEYS = [
     "nios_theme", "nios_profile", "nios_exams", "nios_notes",
-    "nios_pinned_links", "nios_assignments", "nios_streak_days", "nios_timer_sessions"
+    "nios_pinned_links", "nios_assignments", "nios_streak_days", "nios_timer_sessions",
+    "nios_grade_subjects"
   ];
   document.getElementById("exportBtn").addEventListener("click", () => {
     const data = {};
@@ -1712,6 +1794,97 @@
     reader.readAsText(file);
   });
 
+  /* ===================== Grade calculator ===================== */
+  const GC_KEY = "nios_grade_subjects";
+  const gcHasPractical = document.getElementById("gcHasPractical");
+  const gcPracticalWrap = document.getElementById("gcPracticalWrap");
+  const gcResult = document.getElementById("gcResult");
+
+  gcHasPractical.addEventListener("change", () => {
+    gcPracticalWrap.style.display = gcHasPractical.checked ? "block" : "none";
+  });
+
+  function num(id) { return Number(document.getElementById(id).value) || 0; }
+
+  function computeGrade() {
+    const level = document.getElementById("gcLevel").value;
+    const hasPrac = gcHasPractical.checked;
+    const theoryMax = num("gcTheoryMax"), theoryObt = num("gcTheoryObt");
+    const tmaMax = num("gcTmaMax"), tmaObt = num("gcTmaObt");
+    const pracMax = hasPrac ? num("gcPracMax") : 0;
+    const pracObt = hasPrac ? num("gcPracObt") : 0;
+
+    const theoryComponentMax = theoryMax + tmaMax;
+    const theoryComponentObt = theoryObt + tmaObt;
+    const theoryPct = theoryComponentMax ? (theoryComponentObt / theoryComponentMax) * 100 : 0;
+    const pracPct = pracMax ? (pracObt / pracMax) * 100 : null;
+    const aggMax = theoryComponentMax + pracMax;
+    const aggObt = theoryComponentObt + pracObt;
+    const aggPct = aggMax ? (aggObt / aggMax) * 100 : 0;
+
+    let pass;
+    if (level === "secondary") {
+      pass = aggPct >= 33;
+    } else {
+      pass = aggPct >= 33 && theoryPct >= 33 && (!hasPrac || pracPct >= 33);
+    }
+    return { level, hasPrac, theoryPct, pracPct, aggPct, pass };
+  }
+
+  function renderGcResult(r) {
+    gcResult.style.display = "block";
+    gcResult.className = r.pass ? "pass" : "fail";
+    gcResult.innerHTML = `
+      <div class="gc-verdict ${r.pass ? "pass" : "fail"}">${r.pass ? "✓ Likely Pass" : "✕ Likely Not Passed"}</div>
+      <div class="gc-line"><span>Aggregate</span><strong>${r.aggPct.toFixed(1)}%</strong></div>
+      <div class="gc-line"><span>Theory (incl. TMA)</span><strong>${r.theoryPct.toFixed(1)}%</strong></div>
+      ${r.hasPrac ? `<div class="gc-line"><span>Practical</span><strong>${r.pracPct.toFixed(1)}%</strong></div>` : ""}
+    `;
+  }
+
+  function getGradeSubjects() {
+    try { return JSON.parse(localStorage.getItem(GC_KEY) || "[]"); } catch { return []; }
+  }
+  function saveGradeSubjects(list) { localStorage.setItem(GC_KEY, JSON.stringify(list)); }
+
+  function renderGradeSubjects() {
+    const list = getGradeSubjects();
+    const wrap = document.getElementById("gcSavedWrap");
+    const container = document.getElementById("gcSavedList");
+    wrap.style.display = list.length ? "block" : "none";
+    container.innerHTML = "";
+    list.forEach((s) => {
+      const row = document.createElement("div");
+      row.className = "gc-item";
+      row.innerHTML = `
+        <span>${escapeHtml(s.subject || "Untitled")}<br/><span class="hint" style="margin:0;">${s.aggPct.toFixed(1)}% aggregate</span></span>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span class="gc-badge ${s.pass ? "pass" : "fail"}">${s.pass ? "Pass" : "Not passed"}</span>
+          <button type="button" class="assign-del" data-id="${s.id}" aria-label="Delete">✕</button>
+        </span>`;
+      container.appendChild(row);
+    });
+    container.querySelectorAll(".assign-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        saveGradeSubjects(getGradeSubjects().filter((x) => x.id !== btn.dataset.id));
+        renderGradeSubjects();
+      });
+    });
+  }
+
+  document.getElementById("gcCalcBtn").addEventListener("click", () => {
+    const r = computeGrade();
+    renderGcResult(r);
+    const subject = document.getElementById("gcSubject").value.trim();
+    const list = getGradeSubjects();
+    const entry = { id: String(Date.now()), subject, level: r.level, aggPct: r.aggPct, pass: r.pass };
+    // Replace an existing entry for the same subject name instead of duplicating.
+    const existingIdx = subject ? list.findIndex((x) => x.subject.toLowerCase() === subject.toLowerCase()) : -1;
+    if (existingIdx >= 0) list[existingIdx] = entry; else list.push(entry);
+    saveGradeSubjects(list);
+    renderGradeSubjects();
+  });
+
   /* ===================== Init ===================== */
   renderProfile();
   renderExams();
@@ -1721,6 +1894,7 @@
   renderAssignments();
   renderTimer();
   renderTimerStats();
+  renderGradeSubjects();
   if ("Notification" in window && Notification.permission === "granted") {
     document.getElementById("enableNotifBtn").textContent = "Notifications enabled ✓";
   }

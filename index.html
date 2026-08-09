@@ -459,6 +459,23 @@
   }
   .gc-item .gc-badge.pass{ background:var(--green); color:#fff; }
   .gc-item .gc-badge.fail{ background:var(--red); color:#fff; }
+
+  .syl-block{ margin-bottom:20px; }
+  .syl-block:last-child{ margin-bottom:0; }
+  .syl-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .syl-head .subj-label{ font-weight:600; font-size:14px; }
+  .syl-progress-track{
+    width:100%; height:7px; border-radius:4px; background:var(--parchment); overflow:hidden; margin-bottom:10px;
+  }
+  .syl-progress-fill{ height:100%; background:var(--green); border-radius:4px; transition:width 0.2s ease; }
+  .syl-item{ display:flex; align-items:center; gap:9px; padding:6px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+  .syl-item:last-of-type{ border-bottom:none; }
+  .syl-item input[type="checkbox"]{ width:17px; height:17px; flex:none; }
+  .syl-item.done span.syl-topic{ text-decoration:line-through; color:var(--muted); }
+  .syl-item .syl-del{ background:none; border:none; color:var(--red); font-size:15px; cursor:pointer; margin-left:auto; padding:0 4px; }
+  .syl-add-row{ display:flex; gap:8px; margin-top:10px; }
+  .syl-add-row input{ flex:1; padding:8px 10px; font-size:13px; border:1.5px solid var(--line); border-radius:8px; background:var(--parchment); color:var(--ink); font-family:inherit; }
+  .syl-add-row button{ background:var(--indigo); color:var(--parchment); border:none; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
 </style>
 </head>
 <body>
@@ -807,6 +824,12 @@
       <p class="hint" id="notesEmptyHint" style="margin:0;">Add subjects in "My Profile" above to start taking per-subject notes here.</p>
     </div>
 
+    <p class="section-title"><span>Syllabus Progress</span><span class="ref">LOCAL · PER SUBJECT</span></p>
+
+    <div class="panel-card" id="syllabusWrap">
+      <p class="hint" id="syllabusEmptyHint" style="margin:0;">Add subjects in "My Profile" above to track chapter-by-chapter progress here.</p>
+    </div>
+
     <p class="section-title"><span>Backup &amp; Restore</span><span class="ref">LOCAL · JSON FILE</span></p>
 
     <div class="panel-card">
@@ -878,7 +901,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx4PSyrMbYq6GNroCYcB3Fvf1D_oy0Du6kBaT6PAowoDYEXyP_yhvRijsihtchYDm5jCw/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -1329,6 +1352,7 @@
       profileForm.style.display = "block";
     }
     renderNotes();
+    if (typeof renderSyllabus === "function") renderSyllabus();
   }
 
   document.getElementById("saveProfileBtn").addEventListener("click", () => {
@@ -1757,7 +1781,7 @@
   const BACKUP_KEYS = [
     "nios_theme", "nios_profile", "nios_exams", "nios_notes",
     "nios_pinned_links", "nios_assignments", "nios_streak_days", "nios_timer_sessions",
-    "nios_grade_subjects"
+    "nios_grade_subjects", "nios_syllabus"
   ];
   document.getElementById("exportBtn").addEventListener("click", () => {
     const data = {};
@@ -1885,6 +1909,186 @@
     renderGradeSubjects();
   });
 
+  /* ===================== Syllabus progress (NIOS Secondary presets) ===================== */
+  const SYLLABUS_KEY = "nios_syllabus";
+  const syllabusWrap = document.getElementById("syllabusWrap");
+  const syllabusEmptyHint = document.getElementById("syllabusEmptyHint");
+
+  // Sourced from NIOS's published Secondary (Class 10) syllabus documents.
+  // Mathematics (211) and Social Science (213) are given at module level where
+  // individual lesson titles aren't fully published; Science (212)'s full
+  // 32-lesson breakdown is verified chapter-by-chapter.
+  const NIOS_PRESETS = {
+    "mathematics": {
+      label: "Mathematics (211) — Secondary",
+      topics: [
+        "Algebra (7 lessons)", "Commercial Mathematics (2 lessons)",
+        "Lines and Angles", "Congruence of Triangles", "Concurrent Lines",
+        "Quadrilaterals", "Similarity of Triangles", "Circle",
+        "Angles in a Circle and Cyclic Quadrilaterals", "Secants and Tangents",
+        "Constructions", "Coordinate Geometry",
+        "Mensuration (2 lessons)", "Trigonometry (2 lessons)", "Statistics (3 lessons)"
+      ]
+    },
+    "science": {
+      label: "Science & Technology (212) — Secondary",
+      topics: [
+        "Measurement in Science and Technology",
+        "Matter in Our Surroundings", "Atoms and Molecules", "Chemical Reaction and Equations",
+        "Atomic Structure", "Periodic Classification of Elements", "Chemical Bonding", "Acids, Bases, and Salts",
+        "Motion and Its Description", "Force and Motion", "Gravitation",
+        "Sources of Energy", "Work and Energy", "Thermal Energy", "Light Energy",
+        "Electrical Energy", "Magnetic Effect of Electric Current", "Sound and Communication",
+        "Classification of Living Organisms", "History of Life on Earth",
+        "Building Blocks of Life — Cell and Tissues",
+        "Life Processes I: Nutrition, Transportation, Respiration, and Excretion",
+        "Life Processes II: Control and Coordination", "Life Processes III: Reproduction", "Heredity",
+        "Air and Water", "Metals and Non-metals", "Carbon and Its Compounds",
+        "Natural Environment", "Human Impact on the Environment", "Food Production", "Health and Hygiene"
+      ]
+    },
+    "social science": {
+      label: "Social Science (213) — Secondary (Modules 1–2 verified)",
+      topics: [
+        "Ancient World", "Medieval World", "Modern World I", "Modern World II",
+        "Impact of British Rule on India (1757–1857)", "Religious and Social Awakening in Colonial India",
+        "Popular Resistance to the British Rule", "Indian National Movement",
+        "Physiography of India", "Climate", "Bio-diversity", "Agriculture in India",
+        "Transport and Communication", "Population: Our Greatest Resource"
+      ]
+    },
+    "business studies": {
+      label: "Business Studies (215) — Secondary (most chapters verified)",
+      topics: [
+        "Business Environment", "Forms of Business Organisation (overview)",
+        "Sole Proprietorship, Partnership, Hindu Undivided Family",
+        "Cooperative Societies and Joint Stock Companies",
+        "Transport Service", "Warehousing", "Communication Service", "Postal and Courier Service",
+        "Banking Services", "Insurance Services", "Outsourcing",
+        "Purchase and Sale", "Channels of Distribution", "Retail Trade",
+        "Advertising", "Sales Promotion and Personal Selling",
+        "Consumer Awareness", "Career Opportunities in Business"
+      ]
+    },
+    "data entry operations": {
+      label: "Data Entry Operations (229) — Secondary",
+      topics: [
+        "Input and Output Devices", "System Software and Application Software", "Computer Language", "Compiler and Assembler",
+        "Desktop Elements", "Locating Files and Folders", "Changing System Settings", "File Management in Windows", "Installation of Software and Hardware",
+        "Starting Word Program", "Word Screen Layout", "Typing Screen Objects", "Managing Documents", "Protecting and Finding Documents",
+        "Working with Text", "Formatting Paragraphs", "Creating Bulleted and Numbered Lists", "Spelling and Grammar",
+        "Types of Document in Mail Merge", "Creating Data Source", "Creating Mailing Labels", "Merging Data into Main Document",
+        "Selecting, Adding and Renaming Worksheets", "Modifying a Worksheet", "Resizing Rows and Columns", "Workbook Protection",
+        "Formatting Toolbar", "Formatting Cells", "Formatting Columns and Rows", "Protect and Unprotect Worksheets",
+        "Copying a Formula", "Types of Functions", "Types of Charts", "Auto Shapes and Smart Art",
+        "Creating Slides", "Slide Sorter View", "Changing Slide Layouts", "Moving Between Slides"
+      ]
+    }
+  };
+
+  function matchPreset(subjectName) {
+    const n = subjectName.trim().toLowerCase();
+    if (n.includes("math")) return NIOS_PRESETS["mathematics"];
+    if (n.includes("science") && !n.includes("social")) return NIOS_PRESETS["science"];
+    if (n.includes("social")) return NIOS_PRESETS["social science"];
+    if (n.includes("business")) return NIOS_PRESETS["business studies"];
+    if (n.includes("data entry") || n === "deo") return NIOS_PRESETS["data entry operations"];
+    return null;
+  }
+
+  function getSyllabus() {
+    try { return JSON.parse(localStorage.getItem(SYLLABUS_KEY) || "{}"); } catch { return {}; }
+  }
+  function saveSyllabus(all) { localStorage.setItem(SYLLABUS_KEY, JSON.stringify(all)); }
+
+  function renderSyllabus() {
+    const p = getProfile();
+    const subjects = (p && p.subjects) || [];
+    syllabusWrap.innerHTML = "";
+    if (!subjects.length) {
+      syllabusWrap.appendChild(syllabusEmptyHint);
+      return;
+    }
+    const all = getSyllabus();
+    subjects.forEach((subj) => {
+      const items = all[subj] || [];
+      const preset = matchPreset(subj);
+      const doneCount = items.filter((i) => i.done).length;
+      const pct = items.length ? Math.round((doneCount / items.length) * 100) : 0;
+
+      const block = document.createElement("div");
+      block.className = "syl-block";
+      block.innerHTML = `
+        <div class="syl-head">
+          <span class="subj-label">${escapeHtml(subj)}</span>
+          <span class="hint" style="margin:0;">${doneCount}/${items.length} done</span>
+        </div>
+        <div class="syl-progress-track"><div class="syl-progress-fill" style="width:${pct}%;"></div></div>
+        <div class="syl-items"></div>
+        ${preset && !items.length ? `<button type="button" class="mini-btn syl-load" data-subject="${escapeHtml(subj)}">Load ${escapeHtml(preset.label)} syllabus</button>` : ""}
+        <div class="syl-add-row">
+          <input type="text" class="syl-add-input" placeholder="Add a topic…" />
+          <button type="button" class="syl-add-btn" data-subject="${escapeHtml(subj)}">Add</button>
+        </div>
+      `;
+
+      const itemsWrap = block.querySelector(".syl-items");
+      items.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "syl-item" + (item.done ? " done" : "");
+        row.innerHTML = `
+          <input type="checkbox" ${item.done ? "checked" : ""} data-subject="${escapeHtml(subj)}" data-id="${item.id}" class="syl-check" />
+          <span class="syl-topic">${escapeHtml(item.topic)}</span>
+          <button type="button" class="syl-del" data-subject="${escapeHtml(subj)}" data-id="${item.id}" aria-label="Delete">✕</button>
+        `;
+        itemsWrap.appendChild(row);
+      });
+
+      syllabusWrap.appendChild(block);
+    });
+
+    syllabusWrap.querySelectorAll(".syl-load").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const subj = btn.dataset.subject;
+        const preset = matchPreset(subj);
+        if (!preset) return;
+        const all2 = getSyllabus();
+        all2[subj] = preset.topics.map((t, i) => ({ id: `p${i}`, topic: t, done: false }));
+        saveSyllabus(all2);
+        renderSyllabus();
+      });
+    });
+    syllabusWrap.querySelectorAll(".syl-check").forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const all2 = getSyllabus();
+        const list = all2[cb.dataset.subject] || [];
+        const item = list.find((x) => x.id === cb.dataset.id);
+        if (item) { item.done = cb.checked; saveSyllabus(all2); renderSyllabus(); }
+      });
+    });
+    syllabusWrap.querySelectorAll(".syl-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const all2 = getSyllabus();
+        all2[btn.dataset.subject] = (all2[btn.dataset.subject] || []).filter((x) => x.id !== btn.dataset.id);
+        saveSyllabus(all2);
+        renderSyllabus();
+      });
+    });
+    syllabusWrap.querySelectorAll(".syl-add-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const input = btn.previousElementSibling;
+        const topic = input.value.trim();
+        if (!topic) return;
+        const all2 = getSyllabus();
+        const subj = btn.dataset.subject;
+        all2[subj] = all2[subj] || [];
+        all2[subj].push({ id: String(Date.now()), topic, done: false });
+        saveSyllabus(all2);
+        renderSyllabus();
+      });
+    });
+  }
+
   /* ===================== Init ===================== */
   renderProfile();
   renderExams();
@@ -1895,6 +2099,7 @@
   renderTimer();
   renderTimerStats();
   renderGradeSubjects();
+  renderSyllabus();
   if ("Notification" in window && Notification.permission === "granted") {
     document.getElementById("enableNotifBtn").textContent = "Notifications enabled ✓";
   }

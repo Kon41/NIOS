@@ -27,8 +27,8 @@
     --red:#A5432E;
     --line:#D8CFBE;
     --muted:#6B6455;
-    --card-bg:rgba(255,255,255,0.6);
-    --glass-blur:18px;
+    --card-bg:rgba(255,255,255,0.5);
+    --glass-blur:26px;
     --glass-sheen:rgba(255,255,255,0.55);
     --radius:14px;
   }
@@ -62,20 +62,20 @@
     content:"";
     position:fixed; inset:-15%;
     background:
-      radial-gradient(38% 28% at 12% 8%, rgba(217,142,59,0.30), transparent 60%),
-      radial-gradient(34% 28% at 88% 15%, rgba(63,107,78,0.22), transparent 60%),
-      radial-gradient(42% 34% at 25% 92%, rgba(18,32,63,0.26), transparent 60%),
-      radial-gradient(34% 28% at 92% 88%, rgba(185,114,43,0.22), transparent 60%);
+      radial-gradient(40% 30% at 12% 8%, rgba(217,142,59,0.45), transparent 60%),
+      radial-gradient(36% 30% at 88% 15%, rgba(63,107,78,0.36), transparent 60%),
+      radial-gradient(44% 36% at 25% 92%, rgba(18,32,63,0.40), transparent 60%),
+      radial-gradient(36% 30% at 92% 88%, rgba(185,114,43,0.36), transparent 60%);
     filter:blur(70px);
     z-index:-1;
     pointer-events:none;
   }
   :root[data-theme="dark"] body::before{
     background:
-      radial-gradient(38% 28% at 12% 8%, rgba(227,162,94,0.22), transparent 60%),
-      radial-gradient(34% 28% at 88% 15%, rgba(92,152,115,0.18), transparent 60%),
-      radial-gradient(42% 34% at 25% 92%, rgba(38,64,111,0.30), transparent 60%),
-      radial-gradient(34% 28% at 92% 88%, rgba(217,142,59,0.16), transparent 60%);
+      radial-gradient(40% 30% at 12% 8%, rgba(227,162,94,0.35), transparent 60%),
+      radial-gradient(36% 30% at 88% 15%, rgba(92,152,115,0.30), transparent 60%),
+      radial-gradient(44% 36% at 25% 92%, rgba(38,64,111,0.45), transparent 60%),
+      radial-gradient(36% 30% at 92% 88%, rgba(217,142,59,0.28), transparent 60%);
   }
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
@@ -966,7 +966,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxekMWfWWkIhAhcdvJNNzy6Nd0aYfYgArfXQKWIohvvmlzT_PJPqJd-q1lv7PJMcG9UOA/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -1232,10 +1232,11 @@
   // Service worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      // updateViaCache: "none" stops the browser from serving a stale,
-      // HTTP-cached copy of sw.js itself — without this, an old service
-      // worker can keep running indefinitely and nobody ever sees updates.
-      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+      // The "?v=" query string changes on every deploy of this file, so it's
+      // treated as a different URL — this forces browsers/CDNs to fetch a
+      // truly fresh sw.js instead of relying on a same-URL cache check that
+      // can be delayed by up to ~24 hours on some browsers.
+      navigator.serviceWorker.register("sw.js?v=5", { updateViaCache: "none" })
         .then((reg) => {
           reg.update().catch(() => {});
           const check = () => {

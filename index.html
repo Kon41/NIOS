@@ -27,7 +27,9 @@
     --red:#A5432E;
     --line:#D8CFBE;
     --muted:#6B6455;
-    --card-bg:#FFFFFF;
+    --card-bg:rgba(255,255,255,0.6);
+    --glass-blur:18px;
+    --glass-sheen:rgba(255,255,255,0.55);
     --radius:14px;
   }
   :root[data-theme="dark"]{
@@ -42,7 +44,8 @@
     --red:#D77860;
     --line:#333B4D;
     --muted:#9A93A6;
-    --card-bg:#1D2130;
+    --card-bg:rgba(29,33,48,0.55);
+    --glass-sheen:rgba(255,255,255,0.08);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -53,6 +56,26 @@
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
     padding-bottom:env(safe-area-inset-bottom);
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:-15%;
+    background:
+      radial-gradient(38% 28% at 12% 8%, rgba(217,142,59,0.30), transparent 60%),
+      radial-gradient(34% 28% at 88% 15%, rgba(63,107,78,0.22), transparent 60%),
+      radial-gradient(42% 34% at 25% 92%, rgba(18,32,63,0.26), transparent 60%),
+      radial-gradient(34% 28% at 92% 88%, rgba(185,114,43,0.22), transparent 60%);
+    filter:blur(70px);
+    z-index:-1;
+    pointer-events:none;
+  }
+  :root[data-theme="dark"] body::before{
+    background:
+      radial-gradient(38% 28% at 12% 8%, rgba(227,162,94,0.22), transparent 60%),
+      radial-gradient(34% 28% at 88% 15%, rgba(92,152,115,0.18), transparent 60%),
+      radial-gradient(42% 34% at 25% 92%, rgba(38,64,111,0.30), transparent 60%),
+      radial-gradient(34% 28% at 92% 88%, rgba(217,142,59,0.16), transparent 60%);
   }
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
@@ -141,14 +164,16 @@
   .stub{
     display:flex; align-items:stretch; text-decoration:none;
     background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(160%);
     margin-bottom:10px; position:relative;
-    box-shadow:0 1px 0 rgba(28,35,51,0.02);
+    box-shadow:inset 0 1px 0 var(--glass-sheen), 0 6px 18px rgba(28,35,51,0.06);
     transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     overflow:hidden;
   }
   .stub:hover, .stub:focus-visible{
     transform:translateY(-1px);
-    box-shadow:0 6px 16px rgba(28,35,51,0.08);
+    box-shadow:inset 0 1px 0 var(--glass-sheen), 0 10px 24px rgba(28,35,51,0.10);
     border-color:#C9BDA3; outline:none;
   }
   .stub:active{ transform:translateY(0); }
@@ -264,7 +289,10 @@
   }
   .login-card{
     width:100%; max-width:380px; background:var(--card-bg); border:1px solid var(--line);
-    border-radius:16px; padding:26px 22px 22px; box-shadow:0 10px 30px rgba(28,35,51,0.08);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    border-radius:16px; padding:26px 22px 22px;
+    box-shadow:inset 0 1px 0 var(--glass-sheen), 0 10px 30px rgba(28,35,51,0.1);
   }
   .login-card .badge{
     width:42px; height:42px; border-radius:50%; border:2px solid var(--marigold);
@@ -325,13 +353,18 @@
   .tab-btn{
     flex:1; padding:10px 8px; font-size:13px; font-weight:600;
     border:1px solid var(--line); background:var(--card-bg); color:var(--indigo-2);
-    border-radius:10px; cursor:pointer; font-family:inherit;
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    border-radius:10px; cursor:pointer; font-family:inherit; transition:background 0.15s ease, color 0.15s ease;
   }
   .tab-btn.active{ background:var(--indigo); color:var(--parchment); border-color:var(--indigo); }
 
   /* ---- dashboard panel cards ---- */
   .panel-card{
     background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    box-shadow:inset 0 1px 0 var(--glass-sheen), 0 6px 18px rgba(28,35,51,0.05);
     padding:16px; margin:0 20px 14px;
   }
   .panel-card label{
@@ -476,6 +509,15 @@
   .syl-add-row{ display:flex; gap:8px; margin-top:10px; }
   .syl-add-row input{ flex:1; padding:8px 10px; font-size:13px; border:1.5px solid var(--line); border-radius:8px; background:var(--parchment); color:var(--ink); font-family:inherit; }
   .syl-add-row button{ background:var(--indigo); color:var(--parchment); border:none; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+  .rc-clock{
+    font-family:"IBM Plex Mono", monospace; font-weight:700; letter-spacing:0.02em;
+    font-size:clamp(22px, 6vw, 32px); color:var(--indigo-2);
+    padding:16px 10px; border-radius:12px; margin:6px 0 12px;
+    background:linear-gradient(135deg, rgba(217,142,59,0.15), rgba(63,107,78,0.12));
+    border:1px solid var(--line);
+  }
+  .rc-clock.arrived{ color:var(--green); }
 </style>
 </head>
 <body>
@@ -718,6 +760,29 @@
     </div>
     <p class="hint" style="margin:0 20px 18px;">Stored only on this device (localStorage) — never sent anywhere. "Copy" lets you paste your enrollment number straight into an official NIOS form.</p>
 
+    <p class="section-title"><span>Result Countdown</span><span class="ref">LIVE · MANUAL</span></p>
+
+    <div class="panel-card">
+      <p class="hint" style="margin-top:0;">NIOS doesn't run a separate "August batch" — results follow the April–May and October–November exam cycles, and no official date has been announced yet for the next one. Rather than guess, set your own target below once NIOS publishes it (check "Check Results" under Quick Links), or use this for any other date you're counting down to.</p>
+
+      <div id="rcSetup">
+        <label for="rcLabel">What are you counting down to?</label>
+        <input type="text" id="rcLabel" placeholder="e.g. NIOS Result Day" />
+        <label for="rcDate">Target date &amp; time</label>
+        <div class="gc-row">
+          <input type="date" id="rcDate" />
+          <input type="time" id="rcTime" />
+        </div>
+        <button type="button" id="rcSaveBtn">Start countdown</button>
+      </div>
+
+      <div id="rcDisplay" style="display:none; text-align:center;">
+        <div id="rcDisplayLabel" style="font-weight:600; font-size:14px; margin-bottom:6px;"></div>
+        <div class="rc-clock" id="rcClock">00d 00h 00m 00s</div>
+        <button type="button" class="mini-btn" id="rcEditBtn">Change</button>
+      </div>
+    </div>
+
     <p class="section-title"><span>Study Streak</span><span class="ref">LOCAL · DAILY CHECK-IN</span></p>
 
     <div class="panel-card">
@@ -901,7 +966,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx4PSyrMbYq6GNroCYcB3Fvf1D_oy0Du6kBaT6PAowoDYEXyP_yhvRijsihtchYDm5jCw/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -1781,7 +1846,7 @@
   const BACKUP_KEYS = [
     "nios_theme", "nios_profile", "nios_exams", "nios_notes",
     "nios_pinned_links", "nios_assignments", "nios_streak_days", "nios_timer_sessions",
-    "nios_grade_subjects", "nios_syllabus"
+    "nios_grade_subjects", "nios_syllabus", "nios_result_countdown"
   ];
   document.getElementById("exportBtn").addEventListener("click", () => {
     const data = {};
@@ -2089,6 +2154,74 @@
     });
   }
 
+  /* ===================== Result countdown (live, manual) ===================== */
+  const RC_KEY = "nios_result_countdown";
+  const rcSetup = document.getElementById("rcSetup");
+  const rcDisplay = document.getElementById("rcDisplay");
+  const rcClock = document.getElementById("rcClock");
+  const rcDisplayLabel = document.getElementById("rcDisplayLabel");
+  let rcInterval = null;
+
+  function getRC() {
+    try { return JSON.parse(localStorage.getItem(RC_KEY) || "null"); } catch { return null; }
+  }
+
+  function tickRC() {
+    const rc = getRC();
+    if (!rc) return;
+    const diff = rc.target - Date.now();
+    if (diff <= 0) {
+      rcClock.textContent = "🎉 It's here!";
+      rcClock.classList.add("arrived");
+      clearInterval(rcInterval);
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    rcClock.textContent = `${d}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+  }
+
+  function renderRC() {
+    const rc = getRC();
+    clearInterval(rcInterval);
+    if (rc && rc.target) {
+      rcSetup.style.display = "none";
+      rcDisplay.style.display = "block";
+      rcDisplayLabel.textContent = rc.label || "Countdown";
+      rcClock.classList.remove("arrived");
+      tickRC();
+      rcInterval = setInterval(tickRC, 1000);
+    } else {
+      rcSetup.style.display = "block";
+      rcDisplay.style.display = "none";
+    }
+  }
+
+  document.getElementById("rcSaveBtn").addEventListener("click", () => {
+    const label = document.getElementById("rcLabel").value.trim() || "Countdown";
+    const dateVal = document.getElementById("rcDate").value;
+    const timeVal = document.getElementById("rcTime").value;
+    if (!dateVal) return;
+    const target = new Date(dateVal + "T" + (timeVal || "09:00")).getTime();
+    localStorage.setItem(RC_KEY, JSON.stringify({ label, target }));
+    renderRC();
+  });
+
+  document.getElementById("rcEditBtn").addEventListener("click", () => {
+    const rc = getRC();
+    if (rc) {
+      document.getElementById("rcLabel").value = rc.label || "";
+      const d = new Date(rc.target);
+      document.getElementById("rcDate").value = d.toISOString().slice(0, 10);
+      document.getElementById("rcTime").value = d.toTimeString().slice(0, 5);
+    }
+    clearInterval(rcInterval);
+    rcSetup.style.display = "block";
+    rcDisplay.style.display = "none";
+  });
+
   /* ===================== Init ===================== */
   renderProfile();
   renderExams();
@@ -2100,6 +2233,7 @@
   renderTimerStats();
   renderGradeSubjects();
   renderSyllabus();
+  renderRC();
   if ("Notification" in window && Notification.permission === "granted") {
     document.getElementById("enableNotifBtn").textContent = "Notifications enabled ✓";
   }

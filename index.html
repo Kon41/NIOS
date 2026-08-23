@@ -966,7 +966,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxekMWfWWkIhAhcdvJNNzy6Nd0aYfYgArfXQKWIohvvmlzT_PJPqJd-q1lv7PJMcG9UOA/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -1232,8 +1232,12 @@
   // Service worker
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js")
+      // updateViaCache: "none" stops the browser from serving a stale,
+      // HTTP-cached copy of sw.js itself — without this, an old service
+      // worker can keep running indefinitely and nobody ever sees updates.
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
         .then((reg) => {
+          reg.update().catch(() => {});
           const check = () => {
             if (reg.active) { swStatus = "active"; }
             else { swStatus = "registered"; }

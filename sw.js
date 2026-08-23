@@ -1,4 +1,4 @@
-const CACHE = "nios-access-shell-v3.6.5";
+const CACHE = "nios-access-shell-v4";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -21,7 +21,11 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    fetch(event.request)
+    // cache: "no-store" bypasses the browser's own HTTP cache too, so a
+    // successful network fetch always gets the real latest file, not a
+    // stale HTTP-cached copy — only the Cache Storage API below is used
+    // as the offline fallback.
+    fetch(event.request, { cache: "no-store" })
       .then((response) => {
         const copy = response.clone();
         caches.open(CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {});

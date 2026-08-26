@@ -526,6 +526,8 @@
     <div class="login-card">
       <div class="badge">N</div>
 
+      <div id="signedOutReason" style="display:none; font-size:12.5px; color:var(--red); background:rgba(165,67,46,0.1); border:1px solid var(--red); border-radius:8px; padding:8px 10px; margin-bottom:14px;"></div>
+
       <div id="stepEmail">
         <h2>Sign in to continue</h2>
         <p class="hint">Enter your email and we'll send you a 6-digit one-time code. No password needed.</p>
@@ -966,7 +968,7 @@
      5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
      ========================================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxekMWfWWkIhAhcdvJNNzy6Nd0aYfYgArfXQKWIohvvmlzT_PJPqJd-q1lv7PJMcG9UOA/exec",
+    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
     RESEND_COOLDOWN_MS: 30 * 1000
   };
 
@@ -991,9 +993,16 @@
     loginGate.style.display = "none";
     mainWrap.style.display = "block";
   }
-  function showGate() {
+  function showGate(reason) {
     loginGate.style.display = "flex";
     mainWrap.style.display = "none";
+    const reasonEl = document.getElementById("signedOutReason");
+    if (reason) {
+      reasonEl.textContent = `Signed out: ${reason} (tap "Send code" to sign back in — this message is here so you can tell me exactly what's going wrong if it keeps happening)`;
+      reasonEl.style.display = "block";
+    } else {
+      reasonEl.style.display = "none";
+    }
   }
 
   function callServer(payload) {
@@ -1131,13 +1140,17 @@
           if (!data || data.ok !== true) {
             // Server explicitly rejected it (expired/tampered/deauthorized) — log out.
             localStorage.removeItem(SESSION_KEY);
-            showGate();
+            showGate((data && data.error) || "server rejected the saved session");
           }
         })
-        .catch(() => {
+        .catch((err) => {
           // Network hiccup — keep the user logged in on their still-valid local session.
+          console.warn("Background session validation failed (staying logged in):", err);
         });
     }
+  } else if (raw && raw.expiresAt && Date.now() >= raw.expiresAt) {
+    localStorage.removeItem(SESSION_KEY);
+    showGate("your saved session expired");
   } else {
     localStorage.removeItem(SESSION_KEY);
     showGate();

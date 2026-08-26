@@ -526,27 +526,32 @@
     <div class="login-card">
       <div class="badge">N</div>
 
-      <div id="signedOutReason" style="display:none; font-size:12.5px; color:var(--red); background:rgba(165,67,46,0.1); border:1px solid var(--red); border-radius:8px; padding:8px 10px; margin-bottom:14px;"></div>
-
-      <div id="stepEmail">
-        <h2>Sign in to continue</h2>
-        <p class="hint">Enter your email and we'll send you a 6-digit one-time code. No password needed.</p>
-        <label for="otpEmail">Email address</label>
-        <input type="email" id="otpEmail" autocomplete="email" placeholder="you@example.com" />
-        <div class="err" id="emailErr"></div>
-        <button type="button" id="sendCodeBtn">Send code</button>
+      <div id="unlockSetup">
+        <h2>Set up device unlock</h2>
+        <p class="hint">Use your phone's fingerprint, face, or passcode to open this portal — no email, no codes, nothing sent anywhere.</p>
+        <button type="button" id="setupBiometricBtn">Set up Fingerprint / Face / Passcode</button>
+        <button type="button" class="secondary" id="showPinSetupBtn">Use a PIN instead</button>
+        <div id="pinSetupForm" style="display:none; margin-top:6px;">
+          <label for="pinNew">Choose a PIN (4+ digits)</label>
+          <input type="password" id="pinNew" inputmode="numeric" maxlength="8" placeholder="••••" />
+          <label for="pinConfirm">Confirm PIN</label>
+          <input type="password" id="pinConfirm" inputmode="numeric" maxlength="8" placeholder="••••" />
+          <button type="button" id="savePinBtn">Save PIN</button>
+        </div>
+        <div class="err" id="setupErr"></div>
       </div>
 
-      <div id="stepCode" style="display:none;">
-        <h2>Enter your code</h2>
-        <p class="hint">We sent a 6-digit code to <strong id="sentToEmail"></strong>. It expires in 10 minutes.</p>
-        <label for="otpCode">6-digit code</label>
-        <input type="text" id="otpCode" class="otp-input" inputmode="numeric" maxlength="6" placeholder="000000" />
-        <div class="err" id="codeErr"></div>
-        <div class="ok-msg" id="codeOk"></div>
-        <button type="button" id="verifyBtn">Verify &amp; continue</button>
-        <button type="button" class="secondary" id="resendBtn">Resend code</button>
-        <button type="button" class="secondary" id="changeEmailBtn">Use a different email</button>
+      <div id="unlockPrompt" style="display:none; text-align:center;">
+        <div style="font-size:40px; margin:4px 0 8px;">🔒</div>
+        <h2 style="text-align:center;">Locked</h2>
+        <p class="hint">Unlock with your fingerprint, face, or passcode to continue.</p>
+        <button type="button" id="unlockBtn">Unlock</button>
+        <div id="pinUnlockForm" style="display:none;">
+          <input type="password" id="pinEnter" inputmode="numeric" maxlength="8" placeholder="Enter PIN" style="text-align:center; letter-spacing:0.4em;" />
+          <button type="button" id="pinUnlockBtn">Unlock with PIN</button>
+        </div>
+        <div class="err" id="unlockErr"></div>
+        <button type="button" class="secondary" id="resetUnlockBtn" style="margin-top:14px; font-size:11.5px;">Reset device unlock</button>
       </div>
     </div>
   </div>
@@ -735,7 +740,7 @@
 
     <footer>
       Not an official NIOS product · Links only to nios.ac.in and sdmis.nios.ac.in<br/>
-      <a href="#" onclick="niosLogout(); return false;" style="text-decoration:underline;">Sign out</a>
+      <a href="#" onclick="niosLockNow(); return false;" style="text-decoration:underline;">Lock now</a>
     </footer>
 
   </main>
@@ -941,220 +946,211 @@
   "use strict";
 
   /* =========================================================================
-     EMAIL OTP LOGIN — free forever, server-verified (no client-side secrets)
+     DEVICE UNLOCK — fingerprint / face / device passcode, no server at all
      =========================================================================
-     All of this runs on a free Google Apps Script "Web App" acting as your
-     backend (script.google.com), sending mail via your own Gmail account.
-     Free daily quota, resets every 24 hours, no billing account:
-       - Plain Gmail account:        ~100 emails / day
-       - Google Workspace account:   ~1,500 emails / day
+     Uses the WebAuthn "platform authenticator" API: the browser hands off
+     to whatever your phone already uses to unlock itself (Face ID, Touch ID,
+     Android fingerprint, or the device passcode as a fallback). Nothing is
+     sent anywhere — the credential lives only in this browser, tied to this
+     site. If the platform authenticator isn't available (older browser),
+     a simple local PIN (SHA-256 hashed, salted) is offered instead.
 
-     SECURITY: the OTP code is generated, stored, and checked entirely on
-     the server (CacheService) — the browser never sees the correct code,
-     only submits what the user typed. After a correct code, the server
-     issues a signed session token (HMAC) the browser cannot forge or edit;
-     the server re-checks that signature on every page load before granting
-     access, so editing localStorage by hand can't fake a login.
-
-     SETUP (one-time, ~5 minutes):
-     1. Go to https://script.google.com → New project.
-     2. Paste in Code.gs (from the chat response). Set SESSION_SECRET to a
-        long random string. Save.
-     3. Deploy → New deployment → gear icon → Web app.
-          - Execute as: Me
-          - Who has access: Anyone
-        Deploy, authorize with your Google account, copy the /exec URL.
-     4. Paste that URL into CONFIG.APPS_SCRIPT_URL below.
-     5. (Optional) Restrict who can log in via ALLOWED_EMAILS in Code.gs.
+     Note: since the credential is stored by the browser itself, clearing
+     site data, switching browsers, or reinstalling the PWA will require
+     setting this up again — that's normal for this kind of local lock.
      ========================================================================= */
-  const CONFIG = {
-    APPS_SCRIPT_URL: "YOUR_APPS_SCRIPT_WEB_APP_URL",
-    RESEND_COOLDOWN_MS: 30 * 1000
-  };
 
-  const SESSION_KEY = "nios_portal_session";
+  const CRED_KEY = "nios_unlock_cred_id";
+  const PIN_HASH_KEY = "nios_unlock_pin_hash";
+  const PIN_SALT_KEY = "nios_unlock_pin_salt";
+  const UNLOCKED_KEY = "nios_unlocked_session"; // sessionStorage: unlocked for this app open
 
   const loginGate = document.getElementById("loginGate");
   const mainWrap = document.getElementById("mainWrap");
-  const stepEmail = document.getElementById("stepEmail");
-  const stepCode = document.getElementById("stepCode");
-  const otpEmailInput = document.getElementById("otpEmail");
-  const otpCodeInput = document.getElementById("otpCode");
-  const sentToEmail = document.getElementById("sentToEmail");
-  const emailErr = document.getElementById("emailErr");
-  const codeErr = document.getElementById("codeErr");
-  const codeOk = document.getElementById("codeOk");
-  const sendCodeBtn = document.getElementById("sendCodeBtn");
-  const verifyBtn = document.getElementById("verifyBtn");
-  const resendBtn = document.getElementById("resendBtn");
-  const changeEmailBtn = document.getElementById("changeEmailBtn");
+  const unlockSetup = document.getElementById("unlockSetup");
+  const unlockPrompt = document.getElementById("unlockPrompt");
+  const setupErr = document.getElementById("setupErr");
+  const unlockErr = document.getElementById("unlockErr");
+  const pinSetupForm = document.getElementById("pinSetupForm");
+  const pinUnlockForm = document.getElementById("pinUnlockForm");
+  const setupBiometricBtn = document.getElementById("setupBiometricBtn");
+  const unlockBtn = document.getElementById("unlockBtn");
 
   function showPortal() {
     loginGate.style.display = "none";
     mainWrap.style.display = "block";
   }
-  function showGate(reason) {
+  function showGate() {
     loginGate.style.display = "flex";
     mainWrap.style.display = "none";
-    const reasonEl = document.getElementById("signedOutReason");
-    if (reason) {
-      reasonEl.textContent = `Signed out: ${reason} (tap "Send code" to sign back in — this message is here so you can tell me exactly what's going wrong if it keeps happening)`;
-      reasonEl.style.display = "block";
-    } else {
-      reasonEl.style.display = "none";
-    }
   }
 
-  function callServer(payload) {
-    return fetch(CONFIG.APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight
-      body: JSON.stringify(payload)
-    }).then((res) => res.json());
+  function hasCredential() {
+    return !!localStorage.getItem(CRED_KEY) || !!localStorage.getItem(PIN_HASH_KEY);
   }
 
-  window.niosLogout = function () {
-    localStorage.removeItem(SESSION_KEY);
+  function bufToBase64(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+  }
+  function base64ToBuf(b64) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+  function randomChallenge() {
+    const arr = new Uint8Array(32);
+    crypto.getRandomValues(arr);
+    return arr;
+  }
+
+  async function platformAuthAvailable() {
+    return !!(
+      window.PublicKeyCredential &&
+      typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function" &&
+      (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
+    );
+  }
+
+  window.niosLockNow = function () {
+    sessionStorage.removeItem(UNLOCKED_KEY);
     location.reload();
   };
 
-  function isValidEmail(v) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-  }
-
-  let resendTimer = null;
-  function startResendCooldown() {
-    let remaining = Math.ceil(CONFIG.RESEND_COOLDOWN_MS / 1000);
-    resendBtn.disabled = true;
-    resendBtn.textContent = `Resend code (${remaining}s)`;
-    clearInterval(resendTimer);
-    resendTimer = setInterval(() => {
-      remaining--;
-      if (remaining <= 0) {
-        clearInterval(resendTimer);
-        resendBtn.disabled = false;
-        resendBtn.textContent = "Resend code";
-      } else {
-        resendBtn.textContent = `Resend code (${remaining}s)`;
-      }
-    }, 1000);
-  }
-
-  function sendOtp(email) {
-    emailErr.textContent = "";
-    if (!isValidEmail(email)) {
-      emailErr.textContent = "Enter a valid email address.";
-      return;
-    }
-    if (CONFIG.APPS_SCRIPT_URL === "YOUR_APPS_SCRIPT_WEB_APP_URL") {
-      emailErr.textContent = "Email sending isn't configured yet — see CONFIG in the source.";
-      return;
-    }
-
-    sendCodeBtn.disabled = true;
-    sendCodeBtn.textContent = "Sending…";
-
-    callServer({ action: "send", to_email: email })
-      .then((data) => {
-        if (!data || data.ok !== true) throw new Error((data && data.error) || "Send failed");
-        sentToEmail.textContent = email;
-        stepEmail.style.display = "none";
-        stepCode.style.display = "block";
-        otpCodeInput.value = "";
-        codeErr.textContent = "";
-        codeOk.textContent = "";
-        otpCodeInput.focus();
-        startResendCooldown();
-      })
-      .catch((err) => {
-        emailErr.textContent = err.message || "Couldn't send the email. Please try again.";
-        console.error("send error:", err);
-      })
-      .finally(() => {
-        sendCodeBtn.disabled = false;
-        sendCodeBtn.textContent = "Send code";
-      });
-  }
-
-  function verifyOtp(inputCode) {
-    codeErr.textContent = "";
-    codeOk.textContent = "";
-    if (!inputCode) {
-      codeErr.textContent = "Enter the code from your email.";
-      return;
-    }
-
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = "Verifying…";
-
-    callServer({ action: "verify", to_email: otpEmailInput.value.trim(), otp_code: inputCode })
-      .then((data) => {
-        if (!data || data.ok !== true) {
-          const left = typeof data.attemptsLeft === "number" ? ` ${data.attemptsLeft} attempt(s) left.` : "";
-          codeErr.textContent = (data && data.error ? data.error : "Incorrect code.") + left;
-          return;
+  async function registerBiometric() {
+    setupErr.textContent = "";
+    setupBiometricBtn.disabled = true;
+    setupBiometricBtn.textContent = "Waiting for fingerprint / face / passcode…";
+    try {
+      const userId = crypto.getRandomValues(new Uint8Array(16));
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: randomChallenge(),
+          rp: { name: "NIOS Student Access" },
+          user: { id: userId, name: "nios-student", displayName: "NIOS Student" },
+          pubKeyCredParams: [
+            { type: "public-key", alg: -7 },
+            { type: "public-key", alg: -257 }
+          ],
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+          timeout: 60000
         }
-        codeOk.textContent = "Verified — welcome back.";
-        localStorage.setItem(SESSION_KEY, JSON.stringify(data.session));
-        setTimeout(showPortal, 400);
-      })
-      .catch((err) => {
-        codeErr.textContent = "Couldn't verify right now. Please try again.";
-        console.error("verify error:", err);
-      })
-      .finally(() => {
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = "Verify & continue";
       });
-  }
-
-  sendCodeBtn.addEventListener("click", () => sendOtp(otpEmailInput.value.trim()));
-  otpEmailInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendOtp(otpEmailInput.value.trim()); });
-
-  verifyBtn.addEventListener("click", () => verifyOtp(otpCodeInput.value.trim()));
-  otpCodeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") verifyOtp(otpCodeInput.value.trim()); });
-  otpCodeInput.addEventListener("input", () => {
-    otpCodeInput.value = otpCodeInput.value.replace(/\D/g, "").slice(0, 6);
-  });
-
-  resendBtn.addEventListener("click", () => sendOtp(otpEmailInput.value.trim()));
-  changeEmailBtn.addEventListener("click", () => {
-    stepCode.style.display = "none";
-    stepEmail.style.display = "block";
-  });
-
-  // On load: if we hold an unexpired session, show the portal immediately
-  // (no flash of the login screen), then quietly re-check the signed token
-  // with the server in the background. Only a server that explicitly says
-  // "invalid" logs you out — a slow or dropped request never does, since
-  // that was previously kicking people back to the login screen for no
-  // real reason (e.g. Apps Script cold-start lag, a flaky connection).
-  let raw;
-  try { raw = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { raw = null; }
-
-  if (raw && raw.token && raw.expiresAt && Date.now() < raw.expiresAt) {
-    showPortal();
-    if (CONFIG.APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_WEB_APP_URL") {
-      callServer({ action: "validate", token: raw.token })
-        .then((data) => {
-          if (!data || data.ok !== true) {
-            // Server explicitly rejected it (expired/tampered/deauthorized) — log out.
-            localStorage.removeItem(SESSION_KEY);
-            showGate((data && data.error) || "server rejected the saved session");
-          }
-        })
-        .catch((err) => {
-          // Network hiccup — keep the user logged in on their still-valid local session.
-          console.warn("Background session validation failed (staying logged in):", err);
-        });
+      if (!cred) throw new Error("No credential returned");
+      localStorage.setItem(CRED_KEY, bufToBase64(cred.rawId));
+      sessionStorage.setItem(UNLOCKED_KEY, "1");
+      showPortal();
+    } catch (err) {
+      console.error("Biometric setup failed:", err);
+      setupErr.textContent = "Couldn't set up device unlock (" + (err.message || "cancelled") + "). You can use a PIN instead.";
+    } finally {
+      setupBiometricBtn.disabled = false;
+      setupBiometricBtn.textContent = "Set up Fingerprint / Face / Passcode";
     }
-  } else if (raw && raw.expiresAt && Date.now() >= raw.expiresAt) {
-    localStorage.removeItem(SESSION_KEY);
-    showGate("your saved session expired");
-  } else {
-    localStorage.removeItem(SESSION_KEY);
-    showGate();
   }
+
+  async function unlockWithBiometric() {
+    unlockErr.textContent = "";
+    const credId = localStorage.getItem(CRED_KEY);
+    if (!credId) { unlockErr.textContent = "No device unlock set up on this browser."; return; }
+    unlockBtn.disabled = true;
+    unlockBtn.textContent = "Waiting…";
+    try {
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: randomChallenge(),
+          allowCredentials: [{ id: base64ToBuf(credId), type: "public-key" }],
+          userVerification: "required",
+          timeout: 60000
+        }
+      });
+      if (!assertion) throw new Error("No assertion returned");
+      sessionStorage.setItem(UNLOCKED_KEY, "1");
+      showPortal();
+    } catch (err) {
+      console.error("Unlock failed:", err);
+      unlockErr.textContent = "Unlock failed or cancelled. Try again.";
+    } finally {
+      unlockBtn.disabled = false;
+      unlockBtn.textContent = "Unlock";
+    }
+  }
+
+  async function sha256Hex(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function savePin() {
+    setupErr.textContent = "";
+    const pin = document.getElementById("pinNew").value.trim();
+    const confirmPin = document.getElementById("pinConfirm").value.trim();
+    if (pin.length < 4) { setupErr.textContent = "PIN must be at least 4 digits."; return; }
+    if (pin !== confirmPin) { setupErr.textContent = "PINs don't match."; return; }
+    const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    const salt = bufToBase64(saltBytes.buffer);
+    const hash = await sha256Hex(salt + pin);
+    localStorage.setItem(PIN_SALT_KEY, salt);
+    localStorage.setItem(PIN_HASH_KEY, hash);
+    sessionStorage.setItem(UNLOCKED_KEY, "1");
+    showPortal();
+  }
+
+  async function unlockWithPin() {
+    unlockErr.textContent = "";
+    const pin = document.getElementById("pinEnter").value.trim();
+    const salt = localStorage.getItem(PIN_SALT_KEY) || "";
+    const storedHash = localStorage.getItem(PIN_HASH_KEY);
+    const hash = await sha256Hex(salt + pin);
+    if (hash === storedHash) {
+      sessionStorage.setItem(UNLOCKED_KEY, "1");
+      showPortal();
+    } else {
+      unlockErr.textContent = "Incorrect PIN.";
+    }
+  }
+
+  document.getElementById("resetUnlockBtn").addEventListener("click", () => {
+    if (!confirm("Remove device unlock and set it up again?")) return;
+    localStorage.removeItem(CRED_KEY);
+    localStorage.removeItem(PIN_HASH_KEY);
+    localStorage.removeItem(PIN_SALT_KEY);
+    sessionStorage.removeItem(UNLOCKED_KEY);
+    location.reload();
+  });
+
+  setupBiometricBtn.addEventListener("click", registerBiometric);
+  document.getElementById("showPinSetupBtn").addEventListener("click", () => {
+    pinSetupForm.style.display = "block";
+  });
+  document.getElementById("savePinBtn").addEventListener("click", savePin);
+  unlockBtn.addEventListener("click", unlockWithBiometric);
+  document.getElementById("pinUnlockBtn").addEventListener("click", unlockWithPin);
+  document.getElementById("pinEnter")?.addEventListener("keydown", (e) => { if (e.key === "Enter") unlockWithPin(); });
+
+  (async () => {
+    if (sessionStorage.getItem(UNLOCKED_KEY) === "1") {
+      showPortal();
+      return;
+    }
+    if (hasCredential()) {
+      unlockSetup.style.display = "none";
+      unlockPrompt.style.display = "block";
+      if (localStorage.getItem(PIN_HASH_KEY) && !localStorage.getItem(CRED_KEY)) {
+        unlockBtn.style.display = "none";
+        pinUnlockForm.style.display = "block";
+      }
+    } else {
+      unlockSetup.style.display = "block";
+      unlockPrompt.style.display = "none";
+      const avail = await platformAuthAvailable().catch(() => false);
+      if (!avail) {
+        setupBiometricBtn.style.display = "none";
+        pinSetupForm.style.display = "block";
+      }
+    }
+    showGate();
+  })();
 })();
 </script>
 <script>

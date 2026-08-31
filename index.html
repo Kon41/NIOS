@@ -465,6 +465,12 @@
   .assign-due{ font-size:12px; color:var(--muted); }
   .assign-del{ background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; margin-left:auto; }
 
+  .post-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .post-item:last-child{ border-bottom:none; }
+  .post-item .post-label{ font-weight:600; font-size:14px; }
+  .post-item .post-num{ font-family:"IBM Plex Mono", monospace; font-size:12px; color:var(--muted); }
+  .post-item .post-actions{ display:flex; align-items:center; gap:6px; }
+
   .backup-row{ display:flex; gap:8px; }
   .backup-row button, .backup-row label{
     flex:1; text-align:center; border:1px solid var(--line); background:var(--parchment-2);
@@ -656,6 +662,17 @@
     </a>
 
     <p class="section-title"><span>Resources &amp; Support</span><span class="ref">REF · GENERAL</span></p>
+
+    <a class="stub js-stub" href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx" data-url="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx">
+      <div class="tear"><span>POST</span></div>
+      <div class="content">
+        <div class="text">
+          <p class="name">Track India Post Parcel</p>
+          <span class="domain">indiapost.gov.in/…/trackconsignment.aspx</span>
+        </div>
+        <div class="go">→</div>
+      </div>
+    </a>
 
     <a class="stub js-stub" href="https://nios.ac.in/online-course-material.aspx" data-url="https://nios.ac.in/online-course-material.aspx">
       <div class="tear"><span>STUDY</span></div>
@@ -900,6 +917,18 @@
 
     <div class="panel-card" id="syllabusWrap">
       <p class="hint" id="syllabusEmptyHint" style="margin:0;">Add subjects in "My Profile" above to track chapter-by-chapter progress here.</p>
+    </div>
+
+    <p class="section-title"><span>Parcel Tracking</span><span class="ref">LOCAL · SAVED NUMBERS</span></p>
+
+    <div class="panel-card">
+      <p class="hint" style="margin-top:0;">India Post doesn't publish a public tracking API, so there's no reliable way to show live status inside the app without risking wrong info. This saves your consignment numbers so one tap copies the number and opens India Post's real official tracking page for you to paste it in.</p>
+      <div class="exam-add-row">
+        <input type="text" id="postLabel" placeholder="Label (e.g. Admit Card)" />
+        <input type="text" id="postNumber" placeholder="Consignment number" style="text-transform:uppercase;" />
+        <button type="button" id="addPostBtn">Save</button>
+      </div>
+      <div id="postList"></div>
     </div>
 
     <p class="section-title"><span>Backup &amp; Restore</span><span class="ref">LOCAL · JSON FILE</span></p>
@@ -1860,7 +1889,7 @@
   const BACKUP_KEYS = [
     "nios_theme", "nios_profile", "nios_exams", "nios_notes",
     "nios_pinned_links", "nios_assignments", "nios_streak_days", "nios_timer_sessions",
-    "nios_grade_subjects", "nios_syllabus", "nios_result_countdown"
+    "nios_grade_subjects", "nios_syllabus", "nios_result_countdown", "nios_post_tracking"
   ];
   document.getElementById("exportBtn").addEventListener("click", () => {
     const data = {};
@@ -2236,6 +2265,77 @@
     rcDisplay.style.display = "none";
   });
 
+  /* ===================== Parcel tracking (saved numbers, link out) ===================== */
+  const POST_KEY = "nios_post_tracking";
+  const POST_TRACK_URL = "https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx";
+  const postList = document.getElementById("postList");
+
+  function getPostItems() {
+    try { return JSON.parse(localStorage.getItem(POST_KEY) || "[]"); } catch { return []; }
+  }
+  function savePostItems(list) { localStorage.setItem(POST_KEY, JSON.stringify(list)); }
+
+  function renderPostItems() {
+    const list = getPostItems();
+    postList.innerHTML = "";
+    if (!list.length) {
+      postList.innerHTML = '<p class="hint" style="margin:0;">No saved consignment numbers yet.</p>';
+      return;
+    }
+    list.forEach((p) => {
+      const row = document.createElement("div");
+      row.className = "post-item";
+      row.innerHTML = `
+        <span>
+          <span class="post-label">${escapeHtml(p.label)}</span><br/>
+          <span class="post-num">${escapeHtml(p.number)}</span>
+        </span>
+        <span class="post-actions">
+          <button type="button" class="mini-btn post-copy" data-id="${p.id}">Copy</button>
+          <button type="button" class="mini-btn post-track" data-id="${p.id}">Track</button>
+          <button type="button" class="assign-del post-del" data-id="${p.id}" aria-label="Delete">✕</button>
+        </span>`;
+      postList.appendChild(row);
+    });
+    postList.querySelectorAll(".post-copy").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const item = getPostItems().find((x) => x.id === btn.dataset.id);
+        if (!item) return;
+        navigator.clipboard?.writeText(item.number).then(() => {
+          const old = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => (btn.textContent = old), 1200);
+        });
+      });
+    });
+    postList.querySelectorAll(".post-track").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const item = getPostItems().find((x) => x.id === btn.dataset.id);
+        if (!item) return;
+        navigator.clipboard?.writeText(item.number);
+        window.open(POST_TRACK_URL, "_blank", "noopener");
+      });
+    });
+    postList.querySelectorAll(".post-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        savePostItems(getPostItems().filter((x) => x.id !== btn.dataset.id));
+        renderPostItems();
+      });
+    });
+  }
+
+  document.getElementById("addPostBtn").addEventListener("click", () => {
+    const label = document.getElementById("postLabel").value.trim();
+    const number = document.getElementById("postNumber").value.trim().toUpperCase();
+    if (!label || !number) return;
+    const list = getPostItems();
+    list.push({ id: String(Date.now()), label, number });
+    savePostItems(list);
+    document.getElementById("postLabel").value = "";
+    document.getElementById("postNumber").value = "";
+    renderPostItems();
+  });
+
   /* ===================== Init ===================== */
   renderProfile();
   renderExams();
@@ -2248,6 +2348,7 @@
   renderGradeSubjects();
   renderSyllabus();
   renderRC();
+  renderPostItems();
   if ("Notification" in window && Notification.permission === "granted") {
     document.getElementById("enableNotifBtn").textContent = "Notifications enabled ✓";
   }
